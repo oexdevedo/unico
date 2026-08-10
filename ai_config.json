@@ -1,0 +1,59 @@
+{
+  "baseUrl": "https://area-51-anything-llm.mypaeg.easypanel.host",
+  "apiKey": "BGJ66NS-Q2N4TJ9-GQ7HVR0-NX0E70G",
+  "autoReplyEnabled": false,
+  "activeAgent": "tira-duvidas",
+  "replyDelayMin": 4,
+  "replyDelayMax": 8,
+  "disabledChats": [],
+  "perChatAgents": {},
+  "perChatModes": {},
+  "agentWorkspaces": {
+    "tira-duvidas": "tira-duvidas",
+    "vendedor": "vendedor",
+    "auxiliar": "auxiliar"
+  },
+  "customAgents": {
+    "tira-duvidas": {
+      "id": "tira-duvidas",
+      "name": "Tira Dúvidas",
+      "icon": "🧠",
+      "description": "Especialista em esclarecer dúvidas sobre dívidas, organização financeira e como funciona a mentoria.",
+      "fallbackWorkspace": "meu-workspace",
+      "promptPrefix": "Instrução do Agente Tira Dúvidas: Responda como o especialista do Raio X Financeiro, tirando as dúvidas do contato de forma clara, acolhedora, objetiva e humanizada para WhatsApp.",
+      "defaultMode": "autonomous",
+      "theme": "blue"
+    },
+    "vendedor": {
+      "id": "vendedor",
+      "name": "Vendedor",
+      "icon": "💼",
+      "description": "Focado em conversão, quebra de objeções, valor da mentoria e fechamento de vendas.",
+      "fallbackWorkspace": "meu-workspace",
+      "promptPrefix": "Instrução do Agente Vendedor: Responda de forma persuasiva, destacando os benefícios do Raio X Financeiro, quebrando objeções de forma amigável e incentivando o contato a dar o próximo passo.",
+      "defaultMode": "autonomous",
+      "theme": "yellow"
+    },
+    "auxiliar": {
+      "id": "auxiliar",
+      "name": "Auxiliar",
+      "icon": "🤝",
+      "description": "Suporte receptivo para triagem, coleta de dados e direcionamento inicial.",
+      "fallbackWorkspace": "meu-workspace",
+      "promptPrefix": "Instrução do Agente Auxiliar: Responda de forma educada, prestativa e organizada, auxiliando o contato no que for necessário.",
+      "defaultMode": "copilot",
+      "theme": "green"
+    },
+    "teste": {
+      "id": "teste",
+      "name": "teste",
+      "icon": "tet",
+      "description": "teste",
+      "fallbackWorkspace": "meu-workspace",
+      "workspaceSlug": "teste",
+      "promptPrefix": "resoponda teste",
+      "defaultMode": "autonomous",
+      "theme": "yellow"
+    }
+  }
+}

@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="img/logo.png">
+  <title>Unico — CRM WhatsApp Multi-Agentes</title>
+  <meta name="description" content="CRM unificado para WhatsApp com disparos em massa anti-bloqueio, atendimento via IA e gestão de leads.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css?v=2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="dark-theme">
+  <div id="app" class="app-shell">
+    <!-- ================================================================== -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================== -->
+    <aside class="app-sidebar" id="appSidebar">
+      <!-- Lime Circle Logo Top -->
+      <div class="mobile-hide" style="display: flex; justify-content: center; padding: 24px 0 32px 0;">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background-color: var(--brand-primary); display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 0;">
+
+        <!-- CRM Principal -->
+        <button class="tab-btn active" data-tab="tab-dashboard" id="navDashboard" title="Dashboard" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </button>
+
+        <button class="tab-btn" data-tab="tab-inbox" id="navInbox" title="Inbox & Chat" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0; position: relative;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span class="badge-count badge-count-inbox-active" id="badgeInboxCount" style="position: absolute; top: 0; right: 0;">0</span>
+        </button>
+
+        <button class="tab-btn" data-tab="tab-contacts" id="navContacts" title="Contatos" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </button>
+
+        <!-- Operações -->
+        <button class="tab-btn" data-tab="tab-dispatcher" id="navDispatcher" title="Disparador em Massa" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </button>
+
+        <button class="tab-btn" data-tab="tab-templates" id="navTemplates" title="Templates" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+        </button>
+
+        <button class="tab-btn" data-tab="tab-logs" id="navLogs" title="Logs & Relatórios" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </button>
+
+        <!-- Inteligência -->
+        <button class="tab-btn" data-tab="tab-ai" id="navAI" title="Agentes de IA" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0; position: relative;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+            <circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path>
+            <circle cx="8" cy="16" r="1"></circle><circle cx="16" cy="16" r="1"></circle>
+          </svg>
+          <span class="badge-count badge-count-ia" style="position: absolute; top: 0; right: 0;">3</span>
+        </button>
+
+      </nav>
+
+      <div class="sidebar-footer" style="padding: 24px 0; display: flex; justify-content: center;">
+        <button class="tab-btn" data-tab="tab-settings" id="navSettings" title="Configurações" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ================================================================== -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================== -->
+    <main class="app-main-content">
+
+      <!-- Top Header Bar -->
+      <header class="main-top-header">
+        <div class="top-header-left">
+          <div class="logo-wrapper">
+            <div class="logo-icon-image">
+              <img src="img/logo.png" alt="Unico Logo">
+            </div>
+            <div class="logo-text">
+              <h1>Unico <span class="badge-pro">2.0</span></h1>
+              <p>CRM WHATSAPP MULTI-AGENTES</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="top-header-center">
+          <div class="top-search-wrapper">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="top-search-input" placeholder="Buscar contatos, chats, templates..." id="globalSearch">
+          </div>
+        </div>
+
+        <div class="top-header-right">
+          <!-- Theme Toggle -->
+          <button class="btn btn-ghost btn-sm" id="btnThemeToggle" title="Alternar Tema" style="padding: 6px; border-radius: 50%;">
+            <svg id="iconSun" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg id="iconMoon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+
+          <!-- AI Pill -->
+          <div class="ai-header-pill" id="headerAiPill">
+            <span class="status-dot dot-online" id="headerAiDot"></span>
+            <span>IA: <strong id="headerActiveAgentName">Vendedor</strong></span>
+            <label class="switch-toggle" title="Auto-Resposta IA">
+              <input type="checkbox" id="headerAutoReplyCheckbox">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- WhatsApp Pill -->
+          <div class="status-pill" id="whatsappDirectPill">
+            <span class="status-dot dot-offline" id="whatsappDirectDot"></span>
+            <span>WhatsApp:</span>
+            <strong id="whatsappDirectStatusText">Carregando...</strong>
+          </div>
+
+          <!-- Test Button -->
+          <button class="btn btn-emerald btn-sm" id="btnOpenTestModal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            Teste Rápido
+          </button>
+          
+          <button class="btn btn-sm" style="background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-main)" onclick="handleLogout()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Sair
+          </button>
+        </div>
+      </header>
+
+      <!-- Tab Content Area -->
+      <div class="tab-content-area" id="tabContentArea">
+
+        <!-- ============================================================ -->
+        <!-- TAB: DASHBOARD -->
+        <!-- ============================================================ -->
+        <div class="tab-panel active" id="tab-dashboard">
+          <div class="tab-panel-header">
+            <h2>Dashboard de Performance</h2>
+            <p>Visão geral das suas campanhas, conversas e métricas de engajamento.</p>
+          </div>
+
+          <!-- Period Filter -->
+          <div class="flex-gap-2 mb-4">
+            <button class="btn btn-sm btn-primary" onclick="DashboardModule.init('7d')">7 dias</button>
+            <button class="btn btn-sm btn-ghost" onclick="DashboardModule.init('30d')">30 dias</button>
+            <button class="btn btn-sm btn-ghost" onclick="DashboardModule.init('90d')">90 dias</button>
+          </div>
+
+          <!-- Bento Grid -->
+          <div class="dashboard-bento-grid">
+            
+            <!-- Col 1: Campanhas e Universal -->
+            <div class="bento-col">
+              <!-- Campanhas -->
+              <div class="card" style="flex: 1; border-radius: 32px; padding: 12px;">
+                <div class="card-header flex-between">
+                  <h3 style="font-weight: 800;">Campanhas Recentes</h3>
+                  <span class="badge" style="background: #000; color: #fff; border-radius: 999px;">Visualizar tudo</span>
+                </div>
+                <div class="card-body" style="padding:0">
+                  <div class="table-container">
+                    <table style="border:none;">
+                      <thead><tr><th>Campanha</th><th>Data</th><th>Status</th></tr></thead>
+                      <tbody id="campaignsTableBody"><tr><td colspan="3" class="text-center text-muted py-8">Carregando...</td></tr></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Dark Card (Universal / Instâncias) -->
+              <div class="card bento-card-dark" style="border-radius: 32px;">
+                <div class="card-header flex-between">
+                  <h3>Instâncias</h3>
+                  <span style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px;">Status</span>
+                </div>
+                <div class="card-body">
+                  <h1 style="font-size: 2.5rem; color: #fff; font-weight: 800;">1 Ativa</h1>
+                  <p style="color: var(--brand-primary); margin-top: 8px;">WhatsApp Web V2</p>
+                  
+                  <div class="flex-between" style="margin-top: 24px; font-size: 0.9rem;">
+                     <span>Bateria: 100%</span>
+                     <span>Ping: 12ms</span>
+                  </div>
+                  <button class="btn" style="width:100%; margin-top: 24px; background: #fff; color: #000; border-radius: 999px;">+ Add Instância</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 2: Status Chart e Métricas -->
+            <div class="bento-col">
+              <!-- Chart -->
+              <div class="card" style="border-radius: 32px; padding: 12px;">
+                <div class="card-header flex-between">
+                  <h3 style="font-weight: 800;">Engajamento</h3>
+                  <select class="input-field" style="width: auto; padding: 4px 12px; border-radius: 12px; font-weight: bold;"><option>Hoje</option></select>
+                </div>
+                <div class="card-body" id="contactStatusChart"><p class="text-muted">Carregando...</p></div>
+              </div>
+              
+              <!-- Métricas Grid Interno -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);" id="dashboardMetricsGrid">
+                <div class="metric-card" style="--accent: var(--brand-primary); border-radius: 24px; background: var(--brand-primary); border: none;">
+                   <div class="metric-card-header"><span class="metric-icon"></span><span class="metric-label" style="font-weight:bold; color:#000;">Enviadas</span></div>
+                   <div class="metric-value" style="color:#000;">—</div>
+                </div>
+                <div class="metric-card" style="--accent: #000; border-radius: 24px; background: #000; border: none;">
+                   <div class="metric-card-header"><span class="metric-icon"></span><span class="metric-label" style="font-weight:bold; color:#fff;">Entregues</span></div>
+                   <div class="metric-value" style="color:#fff;">—</div>
+                </div>
+                <div class="metric-card" style="--accent: #333; border-radius: 24px; background: #222; border: none;">
+                   <div class="metric-card-header"><span class="metric-icon"></span><span class="metric-label" style="font-weight:bold; color:#fff;">Respostas</span></div>
+                   <div class="metric-value" style="color:#fff;">—</div>
+                </div>
+                <div class="metric-card" style="--accent: #f59e0b; border-radius: 24px;">
+                   <div class="metric-card-header"><span class="metric-icon"></span><span class="metric-label" style="font-weight:bold; color:#000;">Falhas</span></div>
+                   <div class="metric-value" style="color:#000;">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 3: Ações e Lime Card -->
+            <div class="bento-col">
+              <!-- Ações Rápidas -->
+              <div class="card" style="border-radius: 32px; padding: 12px;">
+                <div class="card-header">
+                  <h3 style="font-weight: 800;">Ações Rápidas</h3>
+                </div>
+                <div class="card-body text-center">
+                  <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 24px;">
+                    <div style="width:40px; height:40px; border-radius:50%; background:var(--brand-primary); display:flex; align-items:center; justify-content:center; color:#000; font-weight:bold;">A</div>
+                    <div style="width:40px; height:40px; border-radius:50%; background:#222; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold;">B</div>
+                    <div style="width:40px; height:40px; border-radius:50%; border: 2px dashed #ccc; display:flex; align-items:center; justify-content:center; color:#000; font-weight:bold;">+</div>
+                  </div>
+                  <input type="text" class="input-field" placeholder="Número..." style="text-align: center; border-radius: 999px; margin-bottom: 12px; font-weight: bold;">
+                  <button class="btn" style="width:100%; background: #000; color: var(--brand-primary); border-radius: 999px; font-weight: bold;">Enviar</button>
+                </div>
+              </div>
+              
+              <!-- Lime Card -->
+              <div class="card bento-card-lime" style="border-radius: 32px; flex: 1;">
+                <div class="card-body">
+                  <h3>How to reduce blocks by 25%?</h3>
+                  <p style="margin-bottom: 24px; font-weight: 600;">Use nossos Agentes IA de aquecimento em 2ª plano para evitar banimentos.</p>
+                  <button class="btn btn-sm" style="font-weight: bold;">Learn more</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: INBOX & CHAT -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-inbox" style="padding:0; overflow:hidden;">
+          <div class="inbox-layout">
+            <!-- Conversations List -->
+            <div class="inbox-list">
+              <div class="inbox-list-header">
+                <div class="top-search-wrapper" style="margin:0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input type="text" class="top-search-input" placeholder="Buscar conversas..." id="inboxSearchInput">
+                </div>
+              </div>
+              <div class="inbox-list-scroll" id="inboxListScroll">
+                <div class="text-center text-muted py-8">Carregando conversas...</div>
+              </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="chat-area">
+              <div class="chat-header" id="chatHeader">
+                <div class="inbox-avatar" id="chatAvatar"></div>
+                <div>
+                  <div class="inbox-item-name" id="chatContactName">Selecione uma conversa</div>
+                  <div class="inbox-item-preview" id="chatContactPhone">Clique em um contato à esquerda</div>
+                </div>
+                <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                  <button class="btn btn-sm btn-purple" id="btnAskCopilot" style="display:none"> Sugerir Resposta</button>
+                  <select class="form-select" id="chatAiModeSelect" style="width:auto; font-size:12px; padding:4px 8px; display:none">
+                    <option value="autonomous"> Autônomo</option>
+                    <option value="copilot"> Co-Piloto</option>
+                    <option value="off"> IA Off</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="chat-messages" id="chatMessages">
+                <div class="text-center text-muted py-8">Selecione uma conversa para ver as mensagens</div>
+              </div>
+
+              <!-- Co-Pilot Suggestion Area -->
+              <div id="copilotSuggestionArea"></div>
+
+              <div class="chat-input-area">
+                <div id="chatAttachmentPreview" class="chat-attachment-preview" style="display: none;">
+                  <div class="preview-content">
+                    <img id="attachmentPreviewImg" src="" style="display:none; max-height: 100px; border-radius: 4px;">
+                    <audio id="attachmentPreviewAudio" controls style="display:none; max-width: 200px;"></audio>
+                    <span id="attachmentPreviewName" style="font-size: 12px; margin-left: 10px;"></span>
+                  </div>
+                  <button id="btnRemoveAttachment" class="btn-remove-attachment">✖</button>
+                </div>
+                <div class="chat-input-wrapper">
+                  <input type="file" id="chatAttachmentInput" accept="image/*,audio/*,video/*" hidden>
+                  <button class="chat-attach-btn" id="btnAttachMedia" title="Anexar arquivo">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                  </button>
+                  <textarea class="chat-input" id="chatInputText" placeholder="Digite sua mensagem..." rows="1"></textarea>
+                  <button class="chat-send-btn" id="btnSendChat">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact Panel (Right) -->
+            <div class="contact-panel" id="contactPanel">
+              <div class="contact-panel-avatar" id="contactPanelAvatar"></div>
+              <div class="contact-panel-name" id="contactPanelName">—</div>
+              <div class="contact-panel-phone" id="contactPanelPhone">—</div>
+
+              <div class="contact-info-item">
+                <div class="contact-info-icon"></div>
+                <div><div class="text-muted" style="font-size:11px">Email</div><div id="contactPanelEmail">—</div></div>
+              </div>
+              <div class="contact-info-item">
+                <div class="contact-info-icon"></div>
+                <div><div class="text-muted" style="font-size:11px">Profissão</div><div id="contactPanelProfession">—</div></div>
+              </div>
+              <div class="contact-info-item">
+                <div class="contact-info-icon"></div>
+                <div><div class="text-muted" style="font-size:11px">Região</div><div id="contactPanelRegion">—</div></div>
+              </div>
+              <div class="contact-info-item">
+                <div class="contact-info-icon"></div>
+                <div><div class="text-muted" style="font-size:11px">Status</div><div id="contactPanelStatus">—</div></div>
+              </div>
+              <div class="contact-info-item">
+                <div class="contact-info-icon"></div>
+                <div><div class="text-muted" style="font-size:11px">Modo IA</div><div id="contactPanelAiMode">—</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: CONTATOS -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-contacts">
+          <div class="tab-panel-header flex-between">
+            <div>
+              <h2>Contatos do Raio X <span class="badge" id="totalContactsBadge" style="background: var(--brand-primary); color: #000; font-size: 0.8rem; margin-left: 8px;">0</span></h2>
+              <p>Base de contatos sincronizada com o Supabase. Selecione para disparos em massa.</p>
+            </div>
+            <div class="flex-gap-2">
+              <input type="file" id="importContactsInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none">
+              <button class="btn btn-sm btn-emerald" onclick="document.getElementById('importContactsInput').click()"> Importar</button>
+              <button class="btn btn-sm btn-ghost" id="btnRefreshContacts"> Atualizar</button>
+              <button class="btn btn-sm btn-primary" id="btnSelectAllContacts"> Selecionar Todos</button>
+              <button class="btn btn-sm btn-ghost" id="btnDeselectAll">Limpar Seleção</button>
+              <button class="btn btn-sm btn-ghost" id="btnInvertSelection"> Inverter</button>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="card mb-4">
+            <div class="card-body" style="padding: 12px 16px;">
+              <div class="grid-4" style="align-items: end;">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Buscar</label>
+                  <input type="text" class="form-input" id="contactSearchInput" placeholder="Nome, telefone, email...">
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">WhatsApp</label>
+                  <select class="form-select" id="contactPhoneFilter">
+                    <option value="all">Todos</option>
+                    <option value="valid">Com WhatsApp</option>
+                    <option value="invalid">Sem WhatsApp</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Status</label>
+                  <select class="form-select" id="contactStatusFilter">
+                    <option value="all">Todos</option>
+                    <option value="Novo">Novo</option>
+                    <option value="Contatado">Contatado</option>
+                    <option value="Respondido">Respondido</option>
+                    <option value="Convertido">Convertido</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Região</label>
+                  <select class="form-select" id="contactRegionFilter">
+                    <option value="all">Todas</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contacts Table -->
+          <div class="card">
+            <div class="card-body" style="padding:0;">
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:40px"><input type="checkbox" id="checkAllContacts" title="Selecionar/Deselecionar todos"></th>
+                      <th>Nome</th><th>WhatsApp</th><th>Email</th><th>Profissão</th><th>Região</th><th>Status</th><th>Tags</th>
+                    </tr>
+                  </thead>
+                  <tbody id="contactsTableBody">
+                    <tr><td colspan="8" class="text-center text-muted py-8">Carregando contatos...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="text-muted text-sm" id="contactsCountLabel">0 contatos • 0 selecionados</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: DISPARADOR EM MASSA -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-dispatcher">
+          <div class="tab-panel-header">
+            <h2>Disparador em Massa Anti-Bloqueio</h2>
+            <p>Envie mensagens personalizadas para múltiplos contatos com delay randômico anti-ban.</p>
+          </div>
+
+          <div class="grid-2">
+            <!-- Left: Message Composer -->
+            <div class="card">
+              <div class="card-header"><h3>Compor Mensagem</h3></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">Template</label>
+                  <select class="form-select" id="templateSelect">
+                    <option value="">— Selecione um template ou escreva livre —</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Mensagem (suporta Spintax e Variáveis)</label>
+                  <textarea class="form-textarea" id="messageTemplateInput" rows="6" placeholder="{Olá|Oi} {primeiro_nome}! {saudacao}!&#10;&#10;Use variáveis: {nome}, {primeiro_nome}, {saudacao}, {profissao}, {regiao}&#10;Use Spintax: {opção1|opção2|opção3}"></textarea>
+                </div>
+
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label class="form-label">Delay Mínimo (s)</label>
+                    <input type="number" class="form-input" id="delayMinInput" value="20" min="5" max="120">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Delay Máximo (s)</label>
+                    <input type="number" class="form-input" id="delayMaxInput" value="50" min="10" max="180">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Enviar via</label>
+                  <select class="form-select" id="instanceSelectDispatcher">
+                    <option value="round-robin"> Revezamento (Round-Robin)</option>
+                  </select>
+                </div>
+
+                <div class="flex-gap-2 mt-3">
+                  <label class="switch-toggle">
+                    <input type="checkbox" id="chkUpdateSupabase" checked>
+                    <span class="switch-slider"></span>
+                  </label>
+                  <span style="font-size:13px">Atualizar status no Supabase após envio</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Preview + Actions -->
+            <div>
+              <!-- Preview Card -->
+              <div class="card mb-4">
+                <div class="card-header"><h3>Preview da Mensagem</h3></div>
+                <div class="card-body">
+                  <div style="background:#0d1117; border-radius:12px; padding:16px; min-height:100px;">
+                    <div class="chat-bubble outgoing" style="max-width:100%; margin:0;" id="messagePreviewBubble">
+                      <em class="text-muted">A prévia aparecerá aqui...</em>
+                    </div>
+                  </div>
+                  <div class="flex-gap-2 mt-3">
+                    <button class="btn btn-sm btn-ghost" id="btnRefreshPreview"> Nova Variação</button>
+                    <button class="btn btn-sm btn-emerald" id="btnSendTest"> Enviar Teste</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Campaign Progress -->
+              <div class="campaign-progress" id="campaignProgressBox">
+                <div class="flex-between">
+                  <strong id="progressStatusTitle">Preparando...</strong>
+                  <span id="progressPct">0%</span>
+                </div>
+                <div class="progress-bar-track">
+                  <div class="progress-bar-fill" id="progressBarFill" style="width:0%"></div>
+                </div>
+                <div class="progress-stats">
+                  <span>Progresso: <strong id="progressCountText">0 / 0</strong></span>
+                  <span><strong id="progressSuccessText">0</strong> |  <strong id="progressFailText">0</strong></span>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex-gap-2 mt-3">
+                <button class="btn btn-lg btn-emerald" id="btnStartCampaign" style="flex:1">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  Iniciar Disparo em Massa
+                </button>
+                <button class="btn btn-warning btn-sm" id="btnPauseCampaign" style="display:none">⏸ Pausar</button>
+                <button class="btn btn-danger btn-sm" id="btnStopCampaign" style="display:none">⏹ Parar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity Log -->
+          <div class="card mt-4">
+            <div class="card-header">
+              <h3>Log de Atividade</h3>
+              <div class="flex-gap-2">
+                <button class="btn btn-sm btn-ghost" onclick="DispatcherModule.clearLogs()">Limpar</button>
+                <button class="btn btn-sm btn-ghost" onclick="DispatcherModule.exportLogsToCsv()"> Exportar CSV</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="log-console" id="activityLogConsole">
+                <div class="log-entry log-system"><span class="log-time">[Sistema]</span><span class="log-msg">Unico pronto.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: TEMPLATES -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-templates">
+          <div class="tab-panel-header flex-between">
+            <div>
+              <h2>Templates de Mensagens</h2>
+              <p>Gerencie seus templates com suporte a Spintax e variáveis dinâmicas.</p>
+            </div>
+            <button class="btn btn-primary" id="btnNewTemplate">+ Novo Template</button>
+          </div>
+          <div id="templatesGrid" class="grid-2"></div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: LOGS & RELATÓRIOS -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-logs">
+          <div class="tab-panel-header">
+            <h2>Logs & Relatórios de Envio</h2>
+            <p>Histórico detalhado de todas as mensagens enviadas.</p>
+          </div>
+          <div class="card">
+            <div class="card-body" style="padding:0">
+              <div class="table-container">
+                <table>
+                  <thead><tr><th>Hora</th><th>Contato</th><th>Telefone</th><th>Mensagem</th><th>Status</th><th>Detalhes</th></tr></thead>
+                  <tbody id="logsHistoryTableBody"><tr><td colspan="6" class="text-center text-muted py-8">Nenhum envio registrado nesta sessão.</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: AGENTES DE IA -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-ai">
+          <div class="tab-panel-header flex-between">
+            <div>
+              <h2>Agentes de IA</h2>
+              <p>Configure seus agentes do Anything LLM, modo autônomo ou co-piloto, e documentos de contexto .md.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openAgentModal()">+ Novo Agente</button>
+          </div>
+
+          <!-- AI Status -->
+          <div class="card mb-4 card-pastel-purple">
+            <div class="card-body flex-between">
+              <div class="flex-gap-3" style="align-items:center">
+                <span class="status-dot" id="aiStatusDot" style="width:12px; height:12px;"></span>
+                <div>
+                  <strong>Anything LLM</strong>
+                  <div class="text-muted text-sm" id="aiStatusText">Verificando conexão...</div>
+                </div>
+              </div>
+              <div class="flex-gap-2" style="align-items:center">
+                <span style="font-size:13px">Auto-Resposta Global</span>
+                <label class="switch-toggle">
+                  <input type="checkbox" id="aiGlobalAutoReply">
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Agent Cards -->
+          <div class="grid-3" id="aiAgentsGrid">
+            <!-- Renderizado dinamicamente no JS -->
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: CONFIGURAÇÕES -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-settings">
+          <div class="tab-panel-header">
+            <h2>️ Configurações & Conexões</h2>
+            <p>Gerencie suas conexões WhatsApp, Supabase e Anything LLM.</p>
+          </div>
+
+          <!-- WhatsApp Instances -->
+          <div class="card mb-4">
+            <div class="card-header flex-between">
+              <h3>Instâncias WhatsApp (Baileys)</h3>
+              <button class="btn btn-sm btn-primary" id="btnAddInstance">+ Nova Linha</button>
+            </div>
+            <div class="card-body">
+              <div id="instancesGrid" class="grid-3">
+                <div class="text-center text-muted py-8">Carregando instâncias...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connection Settings -->
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><h3>️ Supabase (Raio X)</h3></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">URL do Projeto</label>
+                  <input type="text" class="form-input" id="settingsSupabaseUrl" value="https://iwpveyworwdymlzdmloq.supabase.co">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Anon Key</label>
+                  <input type="password" class="form-input" id="settingsSupabaseKey">
+                </div>
+                <button class="btn btn-sm btn-primary" id="btnSaveSupabase">Salvar e Reconectar</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><h3>Anything LLM</h3></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">URL Base</label>
+                  <input type="text" class="form-input" id="settingsAnythingUrl" value="https://area-51-anything-llm.mypaeg.easypanel.host">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">API Key</label>
+                  <input type="password" class="form-input" id="settingsAnythingKey">
+                </div>
+                <button class="btn btn-sm btn-primary" id="btnSaveAnything">Salvar e Testar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gerenciamento de Usuários -->
+          <div class="card mt-4">
+            <div class="card-header"><h3>Gerenciamento de Usuários</h3></div>
+            <div class="card-body">
+              <p class="text-sm text-muted mb-4">Cadastre manualmente membros da equipe para acessarem o sistema. A restrição de domínio @exdevedor.com.br não é aplicada aqui.</p>
+              <form onsubmit="handleAdminRegister(event)" class="grid-3" style="align-items: end; gap: 1rem;">
+                <div class="form-group mb-0">
+                  <label class="form-label">E-mail</label>
+                  <input type="email" class="form-input" id="adminRegEmail" required placeholder="email@exemplo.com">
+                </div>
+                <div class="form-group mb-0">
+                  <label class="form-label">WhatsApp</label>
+                  <input type="text" class="form-input" id="adminRegPhone" required placeholder="5511999999999">
+                </div>
+                <div class="form-group mb-0">
+                  <label class="form-label">Senha Padrão</label>
+                  <input type="password" class="form-input" id="adminRegPassword" required placeholder="Senha inicial">
+                </div>
+                <div style="grid-column: span 3; display: flex; justify-content: flex-end;">
+                  <button type="submit" class="btn btn-sm btn-primary">Cadastrar Usuário</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div>
+
+      </div> <!-- /tab-content-area -->
+    </main>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- MODALS -->
+  <!-- ================================================================== -->
+
+  <!-- Test Message Modal -->
+  <div class="modal-overlay" id="testMessageModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title"> Enviar Mensagem de Teste</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Número do WhatsApp</label>
+          <input type="text" class="form-input" id="testPhoneInput" placeholder="(11) 99999-9999">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mensagem</label>
+          <textarea class="form-textarea" id="testMessageInput" rows="4" placeholder="Olá! Isso é um teste do Unico "></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').classList.remove('active')">Cancelar</button>
+        <button class="btn btn-emerald" id="btnSendTestMessage">Enviar Teste</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Campaign Details Modal -->
+  <div class="modal-overlay" id="campaignDetailsModal">
+    <div class="modal-box" style="max-width:640px">
+      <div class="modal-header">
+        <h3 class="modal-title">Detalhes da Campanha</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')"></button>
+      </div>
+      <div class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div class="modal-overlay" id="qrCodeModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title"> Escanear QR Code</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')"></button>
+      </div>
+      <div class="modal-body">
+        <div class="qr-display" id="qrCodeDisplay">
+          <p class="text-muted">Carregando QR Code...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ================================================================== -->
+  <!-- SCRIPTS -->
+  <!-- ================================================================== -->
+  <script src="js/supabase.js?v=2"></script>
+  <!-- Modal Criar/Editar Agente -->
+  <div id="agentModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div class="card" style="width: 100%; max-width: 500px; background: var(--bg-card); max-height: 90vh; overflow-y: auto;">
+      <div class="card-header flex-between">
+        <h3 id="agentModalTitle">Novo Agente de IA</h3>
+        <button class="btn btn-sm" onclick="closeAgentModal()" style="background:transparent; color:var(--text-main); font-size:20px;">&times;</button>
+      </div>
+      <div class="card-body">
+        <form id="agentForm" onsubmit="saveAgent(event)">
+          <input type="hidden" id="agentId">
+          <div class="mb-3">
+            <label class="form-label">Nome do Agente</label>
+            <input type="text" id="agentName" class="form-input" required placeholder="Ex: Negociador">
+          </div>
+          <div class="grid-2 gap-3 mb-3">
+            <div>
+              <label class="form-label">Ícone (Emoji)</label>
+              <input type="text" id="agentIcon" class="form-input" required placeholder="Ex: 🤝" maxlength="5">
+            </div>
+            <div>
+              <label class="form-label">Cor do Cartão</label>
+              <select id="agentTheme" class="form-select">
+                <option value="blue">Azul Pastel</option>
+                <option value="yellow">Amarelo Pastel</option>
+                <option value="green">Verde Pastel</option>
+                <option value="purple">Roxo Pastel</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Descrição Curta</label>
+            <input type="text" id="agentDesc" class="form-input" required placeholder="Ex: Especialista em negociação de descontos">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Instruções / Prompt (Opcional)</label>
+            <textarea id="agentPrompt" class="form-input" rows="4" placeholder="Ex: Responda de forma persuasiva..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Modo Padrão</label>
+            <select id="agentMode" class="form-select">
+              <option value="autonomous">Autônomo (Responde sozinho)</option>
+              <option value="copilot">Co-Piloto (Sugere resposta)</option>
+            </select>
+          </div>
+          <div class="flex-end gap-2 mt-4">
+            <button type="button" class="btn btn-secondary" onclick="closeAgentModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar Agente</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="js/templates.js?v=2"></script>
+  <script src="js/whatsapp-direct.js?v=2"></script>
+  <script src="js/dispatcher.js?v=2"></script>
+  <script src="js/dashboard.js?v=2"></script>
+  <script src="js/ai-copilot.js?v=2"></script>
+  <script src="js/contacts-agenda.js?v=2"></script>
+  <script src="js/app.js?v=2"></script>
+</body>
+</html>
