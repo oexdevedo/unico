@@ -1440,6 +1440,9 @@ const App = (() => {
                     <div style="display:flex; align-items:center; gap:6px;">
                       <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${inst.color};"></span>
                       <strong style="font-size:1rem;">${inst.name}</strong>
+                      <button type="button" class="btn btn-sm btn-ghost" onclick="openEditInstanceModal('${inst.id}', '${inst.name.replace(/'/g, "\\'")}', '${inst.color}')" title="Editar nome e cor da conexão" style="padding:2px 6px; color:var(--text-muted); font-size:12px;">
+                        <i class="ti ti-edit"></i>
+                      </button>
                       ${inst.isDefault ? '<span class="badge badge-sm badge-neutral" style="font-size:10px; padding:2px 6px;">Padrão</span>' : ''}
                     </div>
                     <div class="text-muted text-sm" style="margin-top:2px; font-family:var(--font-mono);">${phoneNumber}</div>
@@ -1455,6 +1458,10 @@ const App = (() => {
                 ` : ''}
 
                 <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); align-items:center;">
+                  <button class="btn btn-sm btn-ghost" onclick="openEditInstanceModal('${inst.id}', '${inst.name.replace(/'/g, "\\'")}', '${inst.color}')" title="Mudar nome da conexão" style="color:var(--text-muted);">
+                    <i class="ti ti-edit"></i> Renomear
+                  </button>
+
                   ${inst.disabled ? `
                     <button class="btn btn-sm btn-primary" onclick="App.toggleInstance('${inst.id}', true)" title="Ativar esta linha" style="flex:1;">
                       <i class="ti ti-player-play"></i> Ativar WhatsApp
@@ -1705,6 +1712,62 @@ window.confirmCreateInstance = async function() {
     if (typeof App !== 'undefined' && App.showToast) App.showToast(`Erro: ${err.message}`, 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Criar e Gerar QR'; }
+  }
+};
+
+// Modal de Edição de Linha WhatsApp
+window.openEditInstanceModal = function(id, name, color) {
+  const modal = document.getElementById('editInstanceModal');
+  if (!modal) return;
+  document.getElementById('editInstanceId').value = id;
+  const nameInput = document.getElementById('editInstanceName');
+  if (nameInput) nameInput.value = name || '';
+
+  const radios = document.querySelectorAll('input[name="editInstanceColor"]');
+  radios.forEach(r => {
+    r.checked = (r.value === color);
+  });
+
+  modal.classList.add('active');
+  setTimeout(() => nameInput?.focus(), 100);
+};
+
+window.closeEditInstanceModal = function() {
+  const modal = document.getElementById('editInstanceModal');
+  if (modal) modal.classList.remove('active');
+};
+
+window.confirmEditInstance = async function() {
+  const id = document.getElementById('editInstanceId').value;
+  const nameInput = document.getElementById('editInstanceName');
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (!name) {
+    if (typeof App !== 'undefined' && App.showToast) App.showToast('Informe o nome da conexão.', 'warning');
+    nameInput?.focus();
+    return;
+  }
+
+  const selectedColorEl = document.querySelector('input[name="editInstanceColor"]:checked');
+  const color = selectedColorEl ? selectedColorEl.value : '#10b981';
+
+  const btn = document.getElementById('btnConfirmEditInstance');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+  try {
+    const result = await WhatsAppDirect.renameInstance(id, name, color);
+    if (result.success) {
+      if (typeof App !== 'undefined' && App.showToast) App.showToast(`Conexão atualizada para "${name}"!`, 'success');
+      closeEditInstanceModal();
+      if (typeof App !== 'undefined' && App.refreshInstances) {
+        App.refreshInstances();
+      }
+    } else {
+      if (typeof App !== 'undefined' && App.showToast) App.showToast(`Erro: ${result.error || 'Falha ao salvar conexão.'}`, 'error');
+    }
+  } catch (err) {
+    if (typeof App !== 'undefined' && App.showToast) App.showToast(`Erro: ${err.message}`, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Salvar Alterações'; }
   }
 };
 

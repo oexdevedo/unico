@@ -1231,6 +1231,38 @@
     </div>
   </div>
 
+  <!-- Edit WhatsApp Instance Modal -->
+  <div class="modal-overlay" id="editInstanceModal">
+    <div class="modal-box" style="max-width:480px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="ti ti-edit" style="margin-right:0.4rem; color:var(--brand-primary);"></i> Editar Conexão WhatsApp</h3>
+        <button class="modal-close" onclick="closeEditInstanceModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editInstanceId">
+        <div class="form-group">
+          <label class="form-label">Nome da Linha / Conexão *</label>
+          <input type="text" class="form-input" id="editInstanceName" placeholder="Ex: WhatsApp Vendas, Suporte Principal...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cor de Identificação</label>
+          <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:4px;">
+            <label style="cursor:pointer;"><input type="radio" name="editInstanceColor" value="#10b981"> <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#10b981;vertical-align:middle;"></span></label>
+            <label style="cursor:pointer;"><input type="radio" name="editInstanceColor" value="#3b82f6"> <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#3b82f6;vertical-align:middle;"></span></label>
+            <label style="cursor:pointer;"><input type="radio" name="editInstanceColor" value="#8b5cf6"> <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#8b5cf6;vertical-align:middle;"></span></label>
+            <label style="cursor:pointer;"><input type="radio" name="editInstanceColor" value="#f59e0b"> <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#f59e0b;vertical-align:middle;"></span></label>
+            <label style="cursor:pointer;"><input type="radio" name="editInstanceColor" value="#ef4444"> <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#ef4444;vertical-align:middle;"></span></label>
+            <label style="cursor:pointer;"><input type="radio" name="editInstanceColor" value="#ec4899"> <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#ec4899;vertical-align:middle;"></span></label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeEditInstanceModal()">Cancelar</button>
+        <button class="btn btn-primary" id="btnConfirmEditInstance" onclick="confirmEditInstance()">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Add Contacts to List Modal -->
   <div class="modal-overlay" id="addToListModal">
     <div class="modal-box" style="max-width:560px; max-height:80vh; display:flex; flex-direction:column;">
