@@ -774,6 +774,14 @@ const server = http.createServer(async (req, res) => {
       return json(res, { success: true, url });
     }
 
+    // Resolver telefone real de LID
+    if (pathname === '/api/whatsapp/resolve-phone' && req.method === 'GET') {
+      const jid = parsedUrl.searchParams.get('jid');
+      if (!jid) return jsonError(res, '"jid" é obrigatório.');
+      const phone = await whatsappClient.resolveRealPhone(jid, parsedUrl.searchParams.get('instanceId'));
+      return json(res, { success: true, jid, phone });
+    }
+
     // Limpar mensagens
     if (pathname === '/api/whatsapp/messages/clear' && req.method === 'POST') {
       const payload = await parseBody(req);

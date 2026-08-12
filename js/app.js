@@ -890,26 +890,52 @@ const App = (() => {
   // Helper to match a JID or raw phone against registered contacts in SupabaseModule
   function getMatchedContact(jid, phone) {
     const rawDigits = (phone || jid?.split('@')[0] || '').replace(/\D/g, '');
-    if (!rawDigits || rawDigits.length < 8) return null;
+    if (!rawDigits) return null;
     const allContacts = (typeof SupabaseModule !== 'undefined' && SupabaseModule.getAllContacts) ? SupabaseModule.getAllContacts() : [];
     
     return allContacts.find(c => {
       const cPhone = (c.formattedPhone || c.rawPhone || c.phone || c.whatsapp || '').replace(/\D/g, '');
-      if (!cPhone || cPhone.length < 8) return false;
+      if (!cPhone) return false;
       if (cPhone === rawDigits) return true;
-      const norm1 = rawDigits.startsWith('55') ? rawDigits.substring(2) : rawDigits;
-      const norm2 = cPhone.startsWith('55') ? cPhone.substring(2) : cPhone;
-      if (norm1 === norm2) return true;
-      if (norm1.length === 11 && norm2.length === 10 && norm1.substring(0, 2) === norm2.substring(0, 2) && norm1.substring(3) === norm2.substring(2)) return true;
-      if (norm2.length === 11 && norm1.length === 10 && norm2.substring(0, 2) === norm1.substring(0, 2) && norm2.substring(3) === norm1.substring(2)) return true;
+      if (c.remoteJid && (c.remoteJid === jid || c.remoteJid === `${rawDigits}@lid`)) return true;
+      
+      if (rawDigits.length >= 8 && cPhone.length >= 8) {
+        const norm1 = rawDigits.startsWith('55') ? rawDigits.substring(2) : rawDigits;
+        const norm2 = cPhone.startsWith('55') ? cPhone.substring(2) : cPhone;
+        if (norm1 === norm2) return true;
+        if (norm1.length === 11 && norm2.length === 10 && norm1.substring(0, 2) === norm2.substring(0, 2) && norm1.substring(3) === norm2.substring(2)) return true;
+        if (norm2.length === 11 && norm1.length === 10 && norm2.substring(0, 2) === norm1.substring(0, 2) && norm2.substring(3) === norm1.substring(2)) return true;
+      }
       return false;
     }) || null;
   }
 
   // Quick add to agenda handlers
-  window.quickAddToAgenda = function(jid, suggestedName, rawPhone) {
-    const phone = rawPhone || (jid ? jid.split('@')[0].replace(/\D/g, '') : '');
-    const cleanPhone = (typeof SupabaseModule !== 'undefined' && SupabaseModule.formatDisplayPhone) ? SupabaseModule.formatDisplayPhone(phone) : phone;
+  window.quickAddToAgenda = async function(jid, suggestedName, rawPhone) {
+    let phone = rawPhone || (jid ? jid.split('@')[0].replace(/\D/g, '') : '');
+    
+    // Se for um LID do WhatsApp (>13 dígitos ou @lid), resolve o número real com DDD
+    const isLid = (jid && jid.includes('@lid')) || (phone && phone.length > 13);
+    if (isLid) {
+      const foundMsg = chatMessages.find(m => (m.remoteJid === jid || m.phone === phone) && m.realPhone && m.realPhone.length <= 13);
+      if (foundMsg && foundMsg.realPhone) {
+        phone = foundMsg.realPhone;
+      } else {
+        try {
+          const res = await fetch(`/api/whatsapp/resolve-phone?jid=${encodeURIComponent(jid || phone)}`);
+          const data = await res.json();
+          if (data && data.phone && data.phone.length <= 13) {
+            phone = data.phone;
+          } else {
+            phone = '';
+          }
+        } catch (e) {
+          phone = '';
+        }
+      }
+    }
+
+    const cleanPhone = (typeof SupabaseModule !== 'undefined' && SupabaseModule.formatDisplayPhone && phone) ? SupabaseModule.formatDisplayPhone(phone) : (phone || '');
     
     let cleanName = (suggestedName || '').trim();
     if (cleanName.includes('@') || /^\+?\d[\d\s\-()]+$/.test(cleanName)) {
@@ -922,19 +948,23 @@ const App = (() => {
         const nameInput = document.getElementById('editContactName');
         if (nameInput) nameInput.value = cleanName;
       }
-      if (cleanPhone) {
-        const phoneInput = document.getElementById('editContactPhone');
-        if (phoneInput) phoneInput.value = cleanPhone;
+      const phoneInput = document.getElementById('editContactPhone');
+      if (phoneInput) {
+        phoneInput.value = cleanPhone;
+        if (!cleanPhone) {
+          phoneInput.placeholder = 'Digite o número do WhatsApp com DDD';
+          phoneInput.focus();
+        }
       }
     }
   };
 
-  window.quickAddCurrentChatToAgenda = function() {
+  window.quickAddCurrentChatToAgenda = async function() {
     if (!selectedChatJid) return;
     const rawDigits = (selectedChatJid.split('@')[0] || '').replace(/\D/g, '');
     const firstInbound = chatMessages.find(m => (m.remoteJid === selectedChatJid || m.phone === rawDigits) && !m.fromMe && m.name);
     const whatsAppName = firstInbound?.name || '';
-    window.quickAddToAgenda(selectedChatJid, whatsAppName, rawDigits);
+    await window.quickAddToAgenda(selectedChatJid, whatsAppName, firstInbound?.realPhone || rawDigits);
   };
 
   window.editCurrentChatContact = function() {

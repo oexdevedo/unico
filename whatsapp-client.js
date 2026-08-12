@@ -314,8 +314,15 @@ async function initInstance(config) {
           }
         }
 
-        const senderPhone = remoteJid.split('@')[0].replace(/\D/g, '');
-        const senderName = msg.pushName || senderPhone || 'Contato WhatsApp';
+        let realPhone = '';
+        if (remoteJid.endsWith('@s.whatsapp.net')) {
+          realPhone = remoteJid.split('@')[0].replace(/\D/g, '');
+        } else if (remoteJid.endsWith('@lid')) {
+          realPhone = await resolveRealPhone(remoteJid, config.id);
+        }
+
+        const senderPhone = realPhone || remoteJid.split('@')[0].replace(/\D/g, '');
+        const senderName = msg.pushName || (realPhone ? realPhone : 'Contato WhatsApp');
         const timestampMs = msg.messageTimestamp ? Number(msg.messageTimestamp) * 1000 : Date.now();
         const timeIso = new Date(timestampMs).toISOString();
 
@@ -325,7 +332,8 @@ async function initInstance(config) {
           instanceName: config.name,
           instanceColor: config.color || '#10b981',
           remoteJid,
-          phone: senderPhone,
+          phone: realPhone || senderPhone,
+          realPhone: realPhone || null,
           name: senderName,
           text: textContent,
           mediaUrl: mediaUrl,
@@ -336,7 +344,7 @@ async function initInstance(config) {
           dateFormatted: new Date(timestampMs).toLocaleDateString('pt-BR'),
           isNew: !isFromMe,
           status: 'received',
-          sender: { name: senderName, phone: senderPhone },
+          sender: { name: senderName, phone: realPhone || senderPhone },
           source: 'whatsapp'
         };
 
@@ -526,6 +534,81 @@ function getNextRoundRobinInstance() {
   const selected = connected[roundRobinIndex % connected.length];
   roundRobinIndex++;
   return selected;
+}
+
+async function resolveRealPhone(target, instanceId = null) {
+  if (!target) return '';
+  const str = String(target).trim();
+
+  if (str.endsWith('@s.whatsapp.net')) {
+    return str.split('@')[0].replace(/\D/g, '');
+  }
+
+  const rawId = str.split('@')[0].replace(/\D/g, '');
+
+  if (rawId.length >= 10 && rawId.length <= 13 && (rawId.startsWith('55') || rawId.length <= 11)) {
+    return rawId;
+  }
+
+  let targetInstance = null;
+  if (instanceId) {
+    targetInstance = runtimeInstances.get(instanceId);
+  } else {
+    for (const [id, rt] of runtimeInstances.entries()) {
+      if (rt.sock) { targetInstance = rt; break; }
+    }
+  }
+
+  // 1. Baileys runtime signalRepository
+  if (targetInstance?.sock?.signalRepository?.lidMapping?.getPNForLID) {
+    try {
+      const lidJid = str.includes('@') ? str : `${rawId}@lid`;
+      const pnJid = await targetInstance.sock.signalRepository.lidMapping.getPNForLID(lidJid);
+      if (pnJid) {
+        return pnJid.split('@')[0].replace(/\D/g, '');
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  // 2. Arquivos de mapeamento reverso
+  const searchDirs = [
+    targetInstance ? path.join(__dirname, 'auth_instances', targetInstance.config.id) : null,
+    path.join(__dirname, 'auth_info_baileys'),
+    path.join(__dirname, 'auth_instances')
+  ].filter(Boolean);
+
+  for (const dir of searchDirs) {
+    if (!fs.existsSync(dir)) continue;
+
+    const reverseFile = path.join(dir, `lid-mapping-${rawId}_reverse.json`);
+    if (fs.existsSync(reverseFile)) {
+      try {
+        const content = fs.readFileSync(reverseFile, 'utf8').trim().replace(/["\s]/g, '');
+        if (content && content.length >= 8) return content.replace(/\D/g, '');
+      } catch (e) { /* ignore */ }
+    }
+
+    try {
+      const subdirs = fs.readdirSync(dir, { withFileTypes: true });
+      for (const sub of subdirs) {
+        if (sub.isDirectory()) {
+          const subFile = path.join(dir, sub.name, `lid-mapping-${rawId}_reverse.json`);
+          if (fs.existsSync(subFile)) {
+            try {
+              const content = fs.readFileSync(subFile, 'utf8').trim().replace(/["\s]/g, '');
+              if (content && content.length >= 8) return content.replace(/\D/g, '');
+            } catch (e) { /* ignore */ }
+          }
+        }
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  // 3. Fallback em mensagens recebidas que possuam realPhone
+  const found = receivedMessages.find(m => (m.remoteJid === str || m.remoteJid === `${rawId}@lid`) && m.realPhone);
+  if (found && found.realPhone) return found.realPhone;
+
+  return '';
 }
 
 async function resolveJid(target, sock = null) {
@@ -824,7 +907,7 @@ module.exports = {
   getInstancesList, getInstance, createInstance, deleteInstance,
   renameInstance, logoutInstance,
   getConnectedInstances, getNextRoundRobinInstance,
-  sendTextMessage, sendMediaMessage, resolveJid,
+  sendTextMessage, sendMediaMessage, resolveJid, resolveRealPhone,
   getMessages, deleteConversation, deleteMessage, clearMessages,
   getStatus, getProfilePicture,
   on, emit,
