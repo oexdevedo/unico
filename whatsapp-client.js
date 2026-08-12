@@ -373,6 +373,25 @@ async function initAllInstances() {
   const configs = loadInstancesConfig();
   console.log(`🚀 Inicializando ${configs.length} instância(s) de WhatsApp...`);
   for (const config of configs) {
+    if (config.disabled) {
+      console.log(`⏸️ [${config.name}] Desativada nas configurações.`);
+      let runtime = runtimeInstances.get(config.id);
+      if (!runtime) {
+        runtime = {
+          config,
+          status: 'disabled',
+          qrCode: null,
+          rawQr: null,
+          user: null,
+          sock: null,
+          reconnectAttempts: 0
+        };
+        runtimeInstances.set(config.id, runtime);
+      } else {
+        runtime.status = 'disabled';
+      }
+      continue;
+    }
     await initInstance(config);
   }
 }
@@ -398,7 +417,7 @@ function clearAuthFiles(authDir) {
 function getInstancesList() {
   const configs = loadInstancesConfig();
   return configs.map(config => {
-    const runtime = runtimeInstances.get(config.id) || { status: 'disconnected', qrCode: null, user: null };
+    const runtime = runtimeInstances.get(config.id) || { status: config.disabled ? 'disabled' : 'disconnected', qrCode: null, user: null };
     const instanceMessages = receivedMessages.filter(m => m.instanceId === config.id);
     const unreadCount = instanceMessages.filter(m => !m.fromMe && m.isNew).length;
 
@@ -407,9 +426,10 @@ function getInstancesList() {
       name: config.name,
       color: config.color || '#10b981',
       isDefault: !!config.isDefault,
-      status: runtime.status,
-      connected: runtime.status === 'connected',
-      qrCode: runtime.qrCode,
+      disabled: !!config.disabled,
+      status: config.disabled ? 'disabled' : runtime.status,
+      connected: !config.disabled && runtime.status === 'connected',
+      qrCode: config.disabled ? null : runtime.qrCode,
       user: runtime.user,
       unreadCount,
       totalMessages: instanceMessages.length,
@@ -426,7 +446,7 @@ async function createInstance({ name, color }) {
 
   const newConfig = {
     id: newId, name: cleanName, color: chosenColor,
-    authFolder: `inst_${newId}`, isDefault: false,
+    authFolder: `inst_${newId}`, isDefault: false, disabled: false,
     createdAt: new Date().toISOString()
   };
 
@@ -440,16 +460,48 @@ async function createInstance({ name, color }) {
     instance: {
       id: newConfig.id, name: newConfig.name, color: newConfig.color,
       status: runtime.status, connected: runtime.status === 'connected',
-      qrCode: runtime.qrCode, user: runtime.user
+      qrCode: runtime.qrCode, user: runtime.user, disabled: false
     }
   };
+}
+
+async function toggleInstance(instanceId, enabled) {
+  const configs = loadInstancesConfig();
+  const config = configs.find(c => c.id === instanceId);
+  if (!config) throw new Error(`Instância ${instanceId} não encontrada.`);
+
+  config.disabled = !enabled;
+  saveInstancesConfig(configs);
+
+  let runtime = runtimeInstances.get(instanceId);
+  if (!enabled) {
+    // Desativar / Pausar
+    if (runtime?.sock) {
+      try { runtime.sock.end(); } catch (e) {}
+    }
+    if (runtime) {
+      runtime.status = 'disabled';
+      runtime.qrCode = null;
+      runtime.rawQr = null;
+      runtime.sock = null;
+    }
+    console.log(`⏸️ Instância "${config.name}" desativada.`);
+    return { success: true, message: `Instância "${config.name}" desativada com sucesso.`, instance: getInstance(instanceId) };
+  } else {
+    // Ativar / Reconectar
+    console.log(`▶️ Ativando instância "${config.name}"...`);
+    if (runtime) {
+      runtime.status = 'connecting';
+    }
+    await initInstance(config);
+    return { success: true, message: `Instância "${config.name}" ativada.`, instance: getInstance(instanceId) };
+  }
 }
 
 async function deleteInstance(instanceId) {
   let configs = loadInstancesConfig();
   const target = configs.find(c => c.id === instanceId);
   if (!target) throw new Error(`Instância ${instanceId} não encontrada.`);
-  if (target.isDefault && configs.length === 1) throw new Error('Não é possível excluir a única instância.');
 
   const runtime = runtimeInstances.get(instanceId);
   if (runtime?.sock) {
@@ -460,7 +512,22 @@ async function deleteInstance(instanceId) {
   clearAuthFiles(getAuthDirForInstance(target));
   runtimeInstances.delete(instanceId);
   configs = configs.filter(c => c.id !== instanceId);
+
+  // Se apagou todas, recria a padrão limpa
+  if (configs.length === 0) {
+    configs.push({
+      id: 'default',
+      name: 'WhatsApp Principal',
+      color: '#10b981',
+      authFolder: 'auth_info_baileys',
+      isDefault: true,
+      disabled: false,
+      createdAt: new Date().toISOString()
+    });
+  }
+
   saveInstancesConfig(configs);
+  console.log(`🗑️ Instância "${target.name}" (${instanceId}) excluída.`);
   return { success: true, instanceId };
 }
 
@@ -905,7 +972,7 @@ async function getProfilePicture(jid, instanceId = null) {
 module.exports = {
   initWhatsApp, initAllInstances, initInstance,
   getInstancesList, getInstance, createInstance, deleteInstance,
-  renameInstance, logoutInstance,
+  renameInstance, logoutInstance, toggleInstance,
   getConnectedInstances, getNextRoundRobinInstance,
   sendTextMessage, sendMediaMessage, resolveJid, resolveRealPhone,
   getMessages, deleteConversation, deleteMessage, clearMessages,

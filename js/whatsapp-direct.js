@@ -82,6 +82,15 @@ const WhatsAppDirect = (() => {
     return await res.json();
   }
 
+  async function toggleInstance(instanceId, enabled) {
+    const res = await fetch(`/api/whatsapp/instances/${instanceId}/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled })
+    });
+    return await res.json();
+  }
+
   async function sendMessage(phone, text, options = {}) {
     const res = await fetch('/api/whatsapp/send', {
       method: 'POST',
@@ -149,7 +158,7 @@ const WhatsAppDirect = (() => {
 
   return {
     init, onNewMessage, fetchStatus, fetchInstances,
-    createInstance, deleteInstance, renameInstance, logoutInstance,
+    createInstance, deleteInstance, renameInstance, logoutInstance, toggleInstance,
     sendMessage, sendMediaMessage, fetchMessages, deleteConversation, getProfilePicture
   };
 })();

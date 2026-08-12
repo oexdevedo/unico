@@ -1393,22 +1393,12 @@ const App = (() => {
   // SETTINGS TAB
   // ========================================================================
   function setupSettingsTab() {
-    document.getElementById('btnAddInstance')?.addEventListener('click', async () => {
-      const name = prompt('Nome da nova linha WhatsApp:');
-      if (!name) return;
-      try {
-        const result = await WhatsAppDirect.createInstance(name);
-        if (result.success) {
-          showToast(`Linha "${name}" criada!`, 'success');
-          refreshInstances();
-        }
-      } catch (err) {
-        showToast(`Erro: ${err.message}`, 'error');
-      }
+    document.getElementById('btnAddInstance')?.addEventListener('click', () => {
+      openNewInstanceModal();
     });
 
     document.getElementById('btnSidebarAddLinha')?.addEventListener('click', () => {
-      document.getElementById('btnAddInstance')?.click();
+      openNewInstanceModal();
     });
   }
 
@@ -1418,44 +1408,87 @@ const App = (() => {
     // Settings grid
     const grid = document.getElementById('instancesGrid');
     if (grid) {
-      grid.innerHTML = instances.map(inst => {
-        const statusBadge = inst.connected
-          ? '<span class="badge badge-success">Conectado</span>'
-          : inst.qrCode
-            ? '<span class="badge badge-warning">QR Pronto</span>'
-            : '<span class="badge badge-neutral">Desconectado</span>';
-
-        return `
-          <div class="card" style="border-left: 4px solid ${inst.color}">
-            <div class="card-body">
-              <div class="flex-between mb-4">
-                <div>
-                  <strong>${inst.name}</strong>
-                  <div class="text-muted text-sm">${inst.user?.phone || inst.id}</div>
-                </div>
-                ${statusBadge}
-              </div>
-              ${inst.qrCode ? `<div class="qr-display"><img src="${inst.qrCode}" alt="QR Code"></div>` : ''}
-              <div class="flex-gap-2 mt-3">
-                <button class="btn btn-sm btn-ghost" onclick="App.logoutInstance('${inst.id}')"> Reconectar</button>
-                ${!inst.isDefault ? `<button class="btn btn-sm btn-danger" onclick="App.removeInstance('${inst.id}')"></button>` : ''}
-              </div>
-            </div>
+      if (!instances || instances.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align:center; padding: 2.5rem; background: var(--surface-card); border-radius: 12px; border: 1px dashed var(--border-color);">
+            <div style="font-size:2.5rem; margin-bottom:0.5rem; color:#10b981;"><i class="ti ti-brand-whatsapp"></i></div>
+            <h4 style="font-weight:600; margin-bottom:4px;">Nenhuma conexão WhatsApp configurada</h4>
+            <p class="text-muted text-sm mb-4">Adicione uma nova linha WhatsApp para começar a enviar e receber mensagens.</p>
+            <button class="btn btn-sm btn-primary" onclick="openNewInstanceModal()"><i class="ti ti-plus"></i> Criar Nova Linha</button>
           </div>
         `;
-      }).join('');
+      } else {
+        grid.innerHTML = instances.map(inst => {
+          let statusBadge = '';
+          if (inst.disabled) {
+            statusBadge = '<span class="badge" style="background:var(--surface-muted); color:var(--text-muted); border:1px solid var(--border-color);"><i class="ti ti-player-pause"></i> Desativado</span>';
+          } else if (inst.connected) {
+            statusBadge = '<span class="badge badge-success"><i class="ti ti-circle-check"></i> Conectado</span>';
+          } else if (inst.qrCode) {
+            statusBadge = '<span class="badge badge-warning"><i class="ti ti-qrcode"></i> QR Pronto</span>';
+          } else {
+            statusBadge = '<span class="badge badge-neutral"><i class="ti ti-plug-off"></i> Desconectado</span>';
+          }
+
+          const phoneNumber = inst.user?.phone ? (typeof SupabaseModule !== 'undefined' && SupabaseModule.formatDisplayPhone ? SupabaseModule.formatDisplayPhone(inst.user.phone) : inst.user.phone) : (inst.disabled ? 'Linha Desativada' : (inst.id === 'default' ? 'Linha Principal' : inst.id));
+
+          return `
+            <div class="card" style="border-left: 5px solid ${inst.color}; position: relative; opacity: ${inst.disabled ? '0.75' : '1'}; transition: all 0.2s ease;">
+              <div class="card-body" style="padding: 1.25rem;">
+                <div class="flex-between mb-3" style="align-items: flex-start;">
+                  <div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${inst.color};"></span>
+                      <strong style="font-size:1rem;">${inst.name}</strong>
+                      ${inst.isDefault ? '<span class="badge badge-sm badge-neutral" style="font-size:10px; padding:2px 6px;">Padrão</span>' : ''}
+                    </div>
+                    <div class="text-muted text-sm" style="margin-top:2px; font-family:var(--font-mono);">${phoneNumber}</div>
+                  </div>
+                  <div>${statusBadge}</div>
+                </div>
+
+                ${!inst.disabled && inst.qrCode ? `
+                  <div class="qr-display" style="text-align:center; padding:12px; background:var(--surface-subtle, #f8fafc); border-radius:8px; margin: 12px 0;">
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Escaneie o QR Code no seu WhatsApp:</div>
+                    <img src="${inst.qrCode}" alt="QR Code WhatsApp" style="width:160px; height:160px; border-radius:8px; border: 1px solid var(--border-color); background:#fff; padding:4px;">
+                  </div>
+                ` : ''}
+
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); align-items:center;">
+                  ${inst.disabled ? `
+                    <button class="btn btn-sm btn-primary" onclick="App.toggleInstance('${inst.id}', true)" title="Ativar esta linha" style="flex:1;">
+                      <i class="ti ti-player-play"></i> Ativar WhatsApp
+                    </button>
+                  ` : `
+                    <button class="btn btn-sm btn-ghost" onclick="App.toggleInstance('${inst.id}', false)" title="Desativar/Pausar individualmente" style="color:var(--text-muted);">
+                      <i class="ti ti-player-pause"></i> Desativar
+                    </button>
+                    <button class="btn btn-sm btn-ghost" onclick="App.logoutInstance('${inst.id}')" title="Desconectar e gerar novo QR Code">
+                      <i class="ti ti-refresh"></i> Reconectar
+                    </button>
+                  `}
+                  
+                  <button class="btn btn-sm btn-danger" onclick="App.removeInstance('${inst.id}')" title="Excluir conexão definitivamente" style="padding: 6px 10px; margin-left:auto;">
+                    <i class="ti ti-trash"></i> Deletar
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
     }
 
     // Sidebar linhas
     const sidebarList = document.getElementById('sidebarLinhasList');
     if (sidebarList) {
       sidebarList.innerHTML = instances.map(inst => `
-        <div class="sidebar-linha-card" style="border-left-color: ${inst.color}">
+        <div class="sidebar-linha-card" style="border-left-color: ${inst.color}; opacity: ${inst.disabled ? '0.5' : '1'};">
           <div class="flex-between">
             <span class="linha-name" style="font-weight:600">${inst.name}</span>
-            <span class="status-dot ${inst.connected ? 'dot-online' : 'dot-offline'}" style="width:8px;height:8px"></span>
+            <span class="status-dot ${inst.disabled ? 'dot-offline' : (inst.connected ? 'dot-online' : 'dot-warning')}" style="width:8px;height:8px"></span>
           </div>
-          ${inst.user?.phone ? `<div class="text-muted" style="font-size:11px">${inst.user.phone}</div>` : ''}
+          ${inst.user?.phone ? `<div class="text-muted" style="font-size:11px">${inst.user.phone}</div>` : (inst.disabled ? '<div class="text-muted" style="font-size:10px">Desativada</div>' : '')}
         </div>
       `).join('');
     }
@@ -1465,7 +1498,7 @@ const App = (() => {
     if (select) {
       const current = select.value;
       select.innerHTML = '<option value="round-robin"> Revezamento (Round-Robin)</option>';
-      instances.filter(i => i.connected).forEach(inst => {
+      instances.filter(i => i.connected && !i.disabled).forEach(inst => {
         select.innerHTML += `<option value="${inst.id}" ${current === inst.id ? 'selected' : ''}>${inst.name} (${inst.user?.phone || inst.id})</option>`;
       });
     }
@@ -1475,14 +1508,15 @@ const App = (() => {
   }
 
   function updateWhatsAppStatus(instances) {
-    const connectedCount = instances.filter(i => i.connected).length;
+    const activeInstances = instances.filter(i => !i.disabled);
+    const connectedCount = activeInstances.filter(i => i.connected).length;
     const dot = document.getElementById('whatsappDirectDot');
     const text = document.getElementById('whatsappDirectStatusText');
 
     if (connectedCount > 0) {
       if (dot) { dot.classList.remove('dot-offline', 'dot-warning'); dot.classList.add('dot-online'); }
       if (text) text.textContent = `${connectedCount} linha${connectedCount > 1 ? 's' : ''} ativa${connectedCount > 1 ? 's' : ''}`;
-    } else if (instances.some(i => i.qrCode)) {
+    } else if (activeInstances.some(i => i.qrCode)) {
       if (dot) { dot.classList.remove('dot-online', 'dot-offline'); dot.classList.add('dot-warning'); }
       if (text) text.textContent = 'QR Pendente';
     } else {
@@ -1491,11 +1525,27 @@ const App = (() => {
     }
   }
 
+  async function toggleInstance(id, enabled) {
+    const actionLabel = enabled ? 'Ativando' : 'Desativando';
+    showToast(`${actionLabel} linha WhatsApp...`, 'info');
+    try {
+      const res = await WhatsAppDirect.toggleInstance(id, enabled);
+      if (res.success) {
+        showToast(res.message || (enabled ? 'Linha WhatsApp ativada!' : 'Linha WhatsApp desativada.'), 'success');
+        refreshInstances();
+      } else {
+        showToast(`Erro: ${res.error || 'Falha ao alterar estado da linha.'}`, 'error');
+      }
+    } catch (err) {
+      showToast(`Erro: ${err.message}`, 'error');
+    }
+  }
+
   async function logoutInstance(id) {
-    if (!confirm('Desconectar e gerar novo QR Code?')) return;
+    if (!confirm('Desconectar e gerar novo QR Code para esta linha?')) return;
     try {
       await WhatsAppDirect.logoutInstance(id);
-      showToast('Reconectando...', 'info');
+      showToast('Reconectando linha...', 'info');
       setTimeout(refreshInstances, 2000);
     } catch (err) {
       showToast(`Erro: ${err.message}`, 'error');
@@ -1503,11 +1553,16 @@ const App = (() => {
   }
 
   async function removeInstance(id) {
-    if (!confirm('Excluir esta linha WhatsApp?')) return;
+    if (!confirm('Deseja realmente EXCLUIR esta conexão WhatsApp definitivamente?')) return;
     try {
-      await WhatsAppDirect.deleteInstance(id);
-      showToast('Linha removida.', 'success');
-      refreshInstances();
+      showToast('Excluindo linha WhatsApp...', 'info');
+      const res = await WhatsAppDirect.deleteInstance(id);
+      if (res.success) {
+        showToast('Linha WhatsApp removida com sucesso.', 'success');
+        refreshInstances();
+      } else {
+        showToast(`Erro: ${res.error || 'Falha ao excluir linha.'}`, 'error');
+      }
     } catch (err) {
       showToast(`Erro: ${err.message}`, 'error');
     }
@@ -1598,9 +1653,60 @@ const App = (() => {
   return {
     init, switchTab, showToast,
     toggleContact, selectChat,
+    refreshInstances, toggleInstance,
     logoutInstance, removeInstance
   };
 })();
+
+// Modal de Nova Linha WhatsApp
+window.openNewInstanceModal = function() {
+  const modal = document.getElementById('newInstanceModal');
+  if (modal) {
+    const input = document.getElementById('newInstanceName');
+    if (input) input.value = '';
+    modal.classList.add('active');
+    setTimeout(() => input?.focus(), 100);
+  }
+};
+
+window.closeNewInstanceModal = function() {
+  const modal = document.getElementById('newInstanceModal');
+  if (modal) modal.classList.remove('active');
+};
+
+window.confirmCreateInstance = async function() {
+  const nameInput = document.getElementById('newInstanceName');
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (!name) {
+    if (typeof App !== 'undefined' && App.showToast) App.showToast('Informe o nome da nova linha WhatsApp.', 'warning');
+    nameInput?.focus();
+    return;
+  }
+
+  const selectedColorEl = document.querySelector('input[name="newInstanceColor"]:checked');
+  const color = selectedColorEl ? selectedColorEl.value : '#10b981';
+
+  const btn = document.getElementById('btnConfirmCreateInstance');
+  if (btn) { btn.disabled = true; btn.textContent = 'Criando...'; }
+
+  try {
+    if (typeof App !== 'undefined' && App.showToast) App.showToast(`Criando linha "${name}"...`, 'info');
+    const result = await WhatsAppDirect.createInstance(name, color);
+    if (result.success) {
+      if (typeof App !== 'undefined' && App.showToast) App.showToast(`Linha "${name}" criada com sucesso! Escaneie o QR Code.`, 'success');
+      closeNewInstanceModal();
+      if (typeof App !== 'undefined' && App.refreshInstances) {
+        App.refreshInstances();
+      }
+    } else {
+      if (typeof App !== 'undefined' && App.showToast) App.showToast(`Erro: ${result.error || 'Falha ao criar linha.'}`, 'error');
+    }
+  } catch (err) {
+    if (typeof App !== 'undefined' && App.showToast) App.showToast(`Erro: ${err.message}`, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Criar e Gerar QR'; }
+  }
+};
 
 // ============================================================================
 // BOOT

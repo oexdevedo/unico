@@ -710,6 +710,12 @@ const server = http.createServer(async (req, res) => {
         return json(res, await whatsappClient.logoutInstance(instanceId));
       }
 
+      if (subAction === 'toggle' && req.method === 'POST') {
+        const payload = await parseBody(req);
+        const enabled = payload.enabled !== undefined ? !!payload.enabled : true;
+        return json(res, await whatsappClient.toggleInstance(instanceId, enabled));
+      }
+
       if (!subAction && req.method === 'DELETE') {
         return json(res, await whatsappClient.deleteInstance(instanceId));
       }
