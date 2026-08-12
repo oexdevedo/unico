@@ -108,6 +108,10 @@ const WhatsAppDirect = (() => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         phone, base64Data, mimeType, caption,
+        fileName: options.fileName,
+        contactName: options.contactName,
+        contactId: options.contactId,
+        campaignId: options.campaignId,
         instanceId: options.instanceId,
         simulateTyping: options.simulateTyping
       })

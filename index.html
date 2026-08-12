@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/design-system.css?v=2">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -136,8 +137,15 @@
           <!-- AI Pill -->
           <div class="ai-header-pill" id="headerAiPill">
             <span class="status-dot dot-online" id="headerAiDot"></span>
-            <span>IA: <strong id="headerActiveAgentName">Vendedor</strong></span>
-            <label class="switch-toggle" title="Auto-Resposta IA">
+            <span style="font-size:12px; color:var(--text-secondary); display:inline-flex; align-items:center; gap:2px;">
+              IA:
+              <select id="headerAgentSelect" class="header-agent-select" title="Selecione o assistente ativo no auto-reply">
+                <option value="tira-duvidas">🧠 Tira Dúvidas</option>
+                <option value="vendedor">💼 Vendedor</option>
+                <option value="auxiliar">🤝 Auxiliar</option>
+              </select>
+            </span>
+            <label class="switch-toggle" title="Ligar/Desligar Auto-Resposta IA">
               <input type="checkbox" id="headerAutoReplyCheckbox">
               <span class="switch-slider"></span>
             </label>
@@ -316,11 +324,14 @@
             <div class="chat-area">
               <div class="chat-header" id="chatHeader">
                 <div class="inbox-avatar" id="chatAvatar"></div>
-                <div>
+                <div style="flex:1; min-width:0;">
                   <div class="inbox-item-name" id="chatContactName">Selecione uma conversa</div>
                   <div class="inbox-item-preview" id="chatContactPhone">Clique em um contato à esquerda</div>
                 </div>
                 <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                  <button class="crx-btn crx-btn-primary crx-btn--sm" id="btnChatQuickAddAgenda" style="display:none;" onclick="quickAddCurrentChatToAgenda()">
+                    <i class="ti ti-user-plus"></i> Incluir na Agenda
+                  </button>
                   <button class="btn btn-sm btn-purple" id="btnAskCopilot" style="display:none"> Sugerir Resposta</button>
                   <select class="form-select" id="chatAiModeSelect" style="width:auto; font-size:12px; padding:4px 8px; display:none">
                     <option value="autonomous"> Autônomo</option>
@@ -370,6 +381,15 @@
               <div class="contact-panel-name" id="contactPanelName">—</div>
               <div class="contact-panel-phone" id="contactPanelPhone">—</div>
 
+              <!-- Quick Add to Agenda Callout when contact not in agenda -->
+              <div id="contactPanelNotRegisteredBox" style="display:none; background:var(--bg-surface-raised, #f6f7f7); border:1.5px dashed var(--border-color); border-radius:14px; padding:12px; text-align:center; margin:12px 0;">
+                <span class="badge badge-warning mb-2" style="font-size:11px;">⚠️ Não cadastrado</span>
+                <p class="text-muted text-sm" style="margin:0 0 10px; font-size:12px;">Salve este cliente na sua agenda para personalizar disparos e histórico.</p>
+                <button type="button" class="crx-btn crx-btn-primary crx-btn--sm" style="width:100%; justify-content:center;" onclick="quickAddCurrentChatToAgenda()">
+                  <i class="ti ti-user-plus"></i> Incluir na Agenda
+                </button>
+              </div>
+
               <div class="contact-info-item">
                 <div class="contact-info-icon"></div>
                 <div><div class="text-muted" style="font-size:11px">Email</div><div id="contactPanelEmail">—</div></div>
@@ -384,11 +404,17 @@
               </div>
               <div class="contact-info-item">
                 <div class="contact-info-icon"></div>
-                <div><div class="text-muted" style="font-size:11px">Status</div><div id="contactPanelStatus">—</div></div>
+                <div><div class="text-muted" style="font-size:11px">Status Raio X</div><div id="contactPanelStatus">—</div></div>
               </div>
               <div class="contact-info-item">
                 <div class="contact-info-icon"></div>
                 <div><div class="text-muted" style="font-size:11px">Modo IA</div><div id="contactPanelAiMode">—</div></div>
+              </div>
+
+              <div id="contactPanelEditBtnWrapper" style="margin-top:16px; display:none;">
+                <button type="button" class="crx-btn crx-btn-outline crx-btn--sm" style="width:100%; justify-content:center;" onclick="editCurrentChatContact()">
+                  <i class="ti ti-pencil"></i> Editar Contato
+                </button>
               </div>
             </div>
           </div>
@@ -398,107 +424,329 @@
         <!-- TAB: CONTATOS -->
         <!-- ============================================================ -->
         <div class="tab-panel" id="tab-contacts">
-          <div class="tab-panel-header flex-between">
-            <div>
-              <h2>Contatos do Raio X <span class="badge" id="totalContactsBadge" style="background: var(--brand-primary); color: #000; font-size: 0.8rem; margin-left: 8px;">0</span></h2>
-              <p>Base de contatos sincronizada com o Supabase. Selecione para disparos em massa.</p>
+
+          <!-- Page Header (Crextio style) -->
+          <div class="contacts-page-header">
+            <div class="contacts-page-title-row">
+              <div>
+                <h1 class="contacts-page-title">Contatos</h1>
+                <p class="contacts-page-subtitle">Gerencie sua agenda, organize listas e dispare campanhas segmentadas.</p>
+              </div>
+              <div class="contacts-header-actions">
+                <input type="file" id="importContactsInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none">
+                <button class="crx-btn crx-btn-ghost" id="btnRefreshContacts"><i class="ti ti-refresh"></i> Atualizar</button>
+                <button class="crx-btn crx-btn-ghost" id="btnAgendaExport"><i class="ti ti-download"></i> Exportar</button>
+                <button class="crx-btn crx-btn-outline" onclick="document.getElementById('importContactsInput').click()"><i class="ti ti-upload"></i> Importar</button>
+                <button class="crx-btn crx-btn-outline" onclick="openNewListModal()"><i class="ti ti-plus"></i> Nova Lista</button>
+                <button class="crx-btn crx-btn-primary" onclick="openNewContactModal()"><i class="ti ti-user-plus"></i> Novo Contato</button>
+              </div>
             </div>
-            <div class="flex-gap-2">
-              <input type="file" id="importContactsInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none">
-              <button class="btn btn-sm btn-emerald" onclick="document.getElementById('importContactsInput').click()"> Importar</button>
-              <button class="btn btn-sm btn-ghost" id="btnRefreshContacts"> Atualizar</button>
-              <button class="btn btn-sm btn-primary" id="btnSelectAllContacts"> Selecionar Todos</button>
-              <button class="btn btn-sm btn-ghost" id="btnDeselectAll">Limpar Seleção</button>
-              <button class="btn btn-sm btn-ghost" id="btnInvertSelection"> Inverter</button>
+
+            <!-- Stats Bar -->
+            <div class="contacts-stats-bar">
+              <div class="stat-pill stat-pill--total">
+                <span class="stat-pill__label">Total</span>
+                <span class="stat-pill__value" id="statTotalContacts">0</span>
+              </div>
+              <div class="stat-pill stat-pill--whatsapp">
+                <span class="stat-pill__label">Com WhatsApp</span>
+                <span class="stat-pill__value" id="statWhatsAppContacts">0</span>
+              </div>
+              <div class="stat-pill stat-pill--red">
+                <span class="stat-pill__label">🔴 Vermelho</span>
+                <span class="stat-pill__value" id="statRedContacts">0</span>
+              </div>
+              <div class="stat-pill stat-pill--yellow">
+                <span class="stat-pill__label">🟡 Amarelo</span>
+                <span class="stat-pill__value" id="statYellowContacts">0</span>
+              </div>
+              <div class="stat-pill stat-pill--green">
+                <span class="stat-pill__label">🟢 Verde</span>
+                <span class="stat-pill__value" id="statGreenContacts">0</span>
+              </div>
+              <div class="stat-pill stat-pill--selected">
+                <span class="stat-pill__label">Selecionados</span>
+                <span class="stat-pill__value" id="statSelectedContacts">0</span>
+              </div>
             </div>
           </div>
 
-          <!-- Filters -->
-          <div class="card mb-4">
-            <div class="card-body" style="padding: 12px 16px;">
-              <div class="grid-4" style="align-items: end;">
-                <div class="form-group" style="margin:0">
-                  <label class="form-label">Buscar</label>
-                  <input type="text" class="form-input" id="contactSearchInput" placeholder="Nome, telefone, email...">
+          <!-- Sub-navigation Contatos / Listas (Crextio tabs style) -->
+          <div class="contacts-sub-tabs">
+            <button id="subTabContatos" onclick="switchContactsSubTab('contatos')" class="contacts-sub-tab active">
+              <i class="ti ti-users"></i> Contatos
+            </button>
+            <button id="subTabListas" onclick="switchContactsSubTab('listas')" class="contacts-sub-tab">
+              <i class="ti ti-layout-list"></i> Listas
+            </button>
+          </div>
+
+          <!-- PANEL: CONTATOS -->
+          <div id="panelContatos">
+
+            <!-- Filter Chips Bar (Crextio style) -->
+            <div class="contacts-filter-bar">
+              <div class="contacts-filter-chips">
+                <div class="filter-chip filter-chip--search">
+                  <i class="ti ti-search" style="font-size:14px; color:var(--text-muted);"></i>
+                  <input type="text" class="filter-chip__input" id="contactSearchInput" placeholder="Buscar contato...">
                 </div>
-                <div class="form-group" style="margin:0">
-                  <label class="form-label">WhatsApp</label>
-                  <select class="form-select" id="contactPhoneFilter">
-                    <option value="all">Todos</option>
+                <div class="filter-chip filter-chip--select">
+                  <select class="filter-chip__select" id="contactPhoneFilter">
+                    <option value="all">WhatsApp ▾</option>
                     <option value="valid">Com WhatsApp</option>
                     <option value="invalid">Sem WhatsApp</option>
                   </select>
                 </div>
-                <div class="form-group" style="margin:0">
-                  <label class="form-label">Status</label>
-                  <select class="form-select" id="contactStatusFilter">
-                    <option value="all">Todos</option>
-                    <option value="Novo">Novo</option>
-                    <option value="Contatado">Contatado</option>
-                    <option value="Respondido">Respondido</option>
-                    <option value="Convertido">Convertido</option>
+                <div class="filter-chip filter-chip--select">
+                  <select class="filter-chip__select" id="contactStatusFilter">
+                    <option value="all">Status ▾</option>
+                    <option value="Vermelho">🔴 Vermelho</option>
+                    <option value="Amarelo">🟡 Amarelo</option>
+                    <option value="Verde">🟢 Verde</option>
                   </select>
                 </div>
-                <div class="form-group" style="margin:0">
-                  <label class="form-label">Região</label>
-                  <select class="form-select" id="contactRegionFilter">
-                    <option value="all">Todas</option>
+                <div class="filter-chip filter-chip--select">
+                  <select class="filter-chip__select" id="contactRegionFilter">
+                    <option value="all">Região ▾</option>
                   </select>
                 </div>
               </div>
+
+              <div class="contacts-filter-actions">
+                <button class="crx-icon-btn" id="btnSelectAllContacts" title="Selecionar Todos"><i class="ti ti-checkbox"></i></button>
+                <button class="crx-icon-btn" id="btnDeselectAll" title="Limpar Seleção" style="display:none;"><i class="ti ti-square"></i></button>
+                <button class="crx-icon-btn" id="btnInvertSelection" title="Inverter Seleção" style="display:none;"><i class="ti ti-switch-horizontal"></i></button>
+
+                <!-- Selection action bar (inline) -->
+                <div id="contactsActionBarSelection" style="display:none;" class="selection-actions-inline">
+                  <span class="selection-count-badge" id="selectionCountBadge">0 selecionados</span>
+                  <div style="position:relative;" id="addToListDropdownWrapper">
+                    <button class="crx-btn crx-btn-primary crx-btn--sm" id="btnAddToListDropdown" onclick="toggleAddToListDropdown()">
+                      <i class="ti ti-playlist-add"></i> Adicionar à Lista ▾
+                    </button>
+                    <div id="addToListDropdownMenu" style="display:none; position:absolute; top:100%; right:0; margin-top:6px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:16px; box-shadow:var(--shadow-md); min-width:240px; z-index:200; overflow:hidden;">
+                      <div style="padding:8px 12px; border-bottom:1px solid var(--border-color-light);">
+                        <input type="text" class="form-input" id="listDropdownSearch" placeholder="Buscar lista..." style="padding:6px 10px; font-size:0.82rem;" oninput="filterListDropdown(this.value)">
+                      </div>
+                      <div id="listDropdownItems" style="max-height:200px; overflow-y:auto; padding:4px;"></div>
+                      <div style="padding:8px; border-top:1px solid var(--border-color-light);">
+                        <button class="btn btn-sm btn-ghost" style="width:100%; justify-content:center;" onclick="openNewListModalWithSelection()">
+                          <i class="ti ti-plus"></i> Criar nova lista
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <button class="crx-btn crx-btn-danger crx-btn--sm" onclick="window.confirmDeleteSelectedContacts()">
+                    <i class="ti ti-trash"></i> Excluir
+                  </button>
+                </div>
+              </div>
             </div>
+
+            <!-- Contacts Table (Crextio style) -->
+            <div class="crx-table-wrapper">
+              <table class="crx-table">
+                <thead>
+                  <tr>
+                    <th class="crx-th-check"><input type="checkbox" id="checkAllContacts" class="crx-checkbox" title="Selecionar/Deselecionar todos"></th>
+                    <th>Nome</th>
+                    <th>WhatsApp</th>
+                    <th>Email</th>
+                    <th>Profissão</th>
+                    <th>Região</th>
+                    <th>Status</th>
+                    <th>Lista / Tag</th>
+                    <th class="crx-th-actions">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="contactsTableBody">
+                  <tr><td colspan="9" class="crx-td-empty">Carregando contatos...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="contacts-table-footer">
+              <span class="text-muted text-sm" id="contactsCountLabel">0 contatos • 0 selecionados</span>
+              <span class="badge" id="totalContactsBadge" style="background:var(--brand-primary); color:#000; font-size:0.75rem; padding:3px 10px; border-radius:20px;">0</span>
+            </div>
+          </div> <!-- /panelContatos -->
+
+          <!-- PANEL: LISTAS DE ENVIO (Folder Tabs) -->
+          <div id="panelListas" style="display:none;">
+
+            <!-- Lists Header -->
+            <div class="lists-header">
+              <div>
+                <h3 class="lists-header__title"><i class="ti ti-folders"></i> Listas de Envio</h3>
+                <p class="lists-header__subtitle">Selecione uma pasta para ver e gerenciar seus contatos organizados.</p>
+              </div>
+              <button class="crx-btn crx-btn-primary" onclick="openNewListModal()"><i class="ti ti-plus"></i> Nova Lista</button>
+            </div>
+
+            <!-- Folder Tabs Navigation -->
+            <div class="folder-tabs-bar" id="folderTabsBar">
+              <div class="folder-tabs-scroll" id="folderTabsScroll">
+                <!-- Dynamic folder tabs injected here -->
+              </div>
+            </div>
+
+            <!-- Active List Content Panel -->
+            <div class="folder-content" id="folderContent">
+              <div class="folder-content__empty">
+                <i class="ti ti-folder-off" style="font-size:2.5rem; opacity:0.4;"></i>
+                <p>Selecione uma lista acima para visualizar seus contatos.</p>
+              </div>
+            </div>
+
           </div>
 
-          <!-- Contacts Table -->
-          <div class="card">
-            <div class="card-body" style="padding:0;">
-              <div class="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th style="width:40px"><input type="checkbox" id="checkAllContacts" title="Selecionar/Deselecionar todos"></th>
-                      <th>Nome</th><th>WhatsApp</th><th>Email</th><th>Profissão</th><th>Região</th><th>Status</th><th>Tags</th>
-                    </tr>
-                  </thead>
-                  <tbody id="contactsTableBody">
-                    <tr><td colspan="8" class="text-center text-muted py-8">Carregando contatos...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="card-footer">
-              <span class="text-muted text-sm" id="contactsCountLabel">0 contatos • 0 selecionados</span>
-            </div>
-          </div>
         </div>
 
         <!-- ============================================================ -->
         <!-- TAB: DISPARADOR EM MASSA -->
         <!-- ============================================================ -->
+        <!-- ============================================================ -->
+        <!-- TAB: DISPARADOR EM MASSA -->
+        <!-- ============================================================ -->
         <div class="tab-panel" id="tab-dispatcher">
-          <div class="tab-panel-header">
-            <h2>Disparador em Massa Anti-Bloqueio</h2>
-            <p>Envie mensagens personalizadas para múltiplos contatos com delay randômico anti-ban.</p>
+
+          <!-- Page Header (Crextio style) -->
+          <div class="contacts-page-header">
+            <div class="contacts-page-title-row">
+              <div>
+                <h1 class="contacts-page-title">Disparador em Massa Anti-Bloqueio</h1>
+                <p class="contacts-page-subtitle">Envie mensagens e campanhas personalizadas com rotação de linhas e engine anti-ban inteligente.</p>
+              </div>
+              <div class="contacts-header-actions">
+                <button class="crx-btn crx-btn-ghost" onclick="App.switchTab('tab-contacts')"><i class="ti ti-users"></i> Ver Agenda</button>
+                <button class="crx-btn crx-btn-outline" onclick="openNewListModal()"><i class="ti ti-plus"></i> Nova Lista</button>
+              </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="contacts-stats-bar" id="dispatcherStatsBar">
+              <div class="stat-pill stat-pill--total">
+                <span class="stat-pill__label">Destinatários</span>
+                <span class="stat-pill__value" id="statDispatcherTotalContacts">0</span>
+              </div>
+              <div class="stat-pill stat-pill--selected">
+                <span class="stat-pill__label">Origem</span>
+                <span class="stat-pill__value" id="statDispatcherSourceLabel">Lista</span>
+              </div>
+              <div class="stat-pill stat-pill--whatsapp">
+                <span class="stat-pill__label">WhatsApp</span>
+                <span class="stat-pill__value" id="statDispatcherInstancesCount">Conectado</span>
+              </div>
+              <div class="stat-pill stat-pill--green">
+                <span class="stat-pill__label">Status</span>
+                <span class="stat-pill__value" id="statDispatcherStatusLabel">Pronto</span>
+              </div>
+            </div>
           </div>
 
-          <div class="grid-2">
+          <!-- Seletor de Destinatários & Listas (Card Topo) -->
+          <div class="dispatcher-source-card mb-4">
+            <div class="dispatcher-source-card__header">
+              <div class="dispatcher-source-card__title">
+                <i class="ti ti-target" style="color:var(--brand-primary); font-size:18px;"></i>
+                <strong>Destinatários da Campanha</strong>
+              </div>
+              <div class="dispatcher-source-mode-toggle">
+                <button type="button" class="dispatcher-source-pill" id="btnSourceSelection" onclick="setDispatcherSourceMode('selection')">
+                  <i class="ti ti-checkbox"></i> Contatos da Agenda (<span id="sourceSelectionCount">0</span>)
+                </button>
+                <button type="button" class="dispatcher-source-pill active" id="btnSourceList" onclick="setDispatcherSourceMode('list')">
+                  <i class="ti ti-folders"></i> Lista de Envio
+                </button>
+              </div>
+            </div>
+
+            <div class="dispatcher-source-card__body">
+              <!-- Mode Selection Active Info -->
+              <div id="sourceSelectionPanel" style="display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span class="stat-pill stat-pill--selected" id="sourceSelectionBadge">0 selecionados</span>
+                  <span class="text-muted text-sm">Contatos marcados com checkbox na aba de Agenda</span>
+                </div>
+                <button type="button" class="crx-btn crx-btn-ghost crx-btn--sm" onclick="App.switchTab('tab-contacts')">
+                  <i class="ti ti-edit"></i> Alterar seleção na Agenda
+                </button>
+              </div>
+
+              <!-- Mode List Active Selector -->
+              <div id="sourceListPanel" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:280px;">
+                  <span style="font-size:0.85rem; font-weight:600; color:var(--text-secondary); white-space:nowrap;"><i class="ti ti-folder"></i> Selecionar Lista:</span>
+                  <select class="form-select" id="dispatcherContactSource" style="flex:1; max-width:400px; font-weight:500;">
+                    <option value="selection">Contatos selecionados na Agenda</option>
+                  </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="text-muted text-sm font-semibold" id="dispatcherSourceInfo"></span>
+                  <button type="button" class="crx-btn crx-btn-outline crx-btn--sm" onclick="openNewListModal()">
+                    <i class="ti ti-plus"></i> Nova Lista
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2 gap-4">
             <!-- Left: Message Composer -->
-            <div class="card">
-              <div class="card-header"><h3>Compor Mensagem</h3></div>
-              <div class="card-body">
+            <div class="card" style="border-radius:20px; border:1px solid var(--border-color-light);">
+              <div class="card-header flex-between" style="padding:16px 20px; border-bottom:1px solid var(--border-color-light);">
+                <h3 style="font-size:1.05rem; font-weight:700; margin:0;"><i class="ti ti-message-dots" style="margin-right:6px;"></i> Compor Mensagem</h3>
+                <button type="button" class="crx-btn crx-btn-ghost crx-btn--sm" onclick="TemplatesModule.openTemplateModal()">
+                  <i class="ti ti-plus"></i> Novo Template
+                </button>
+              </div>
+              <div class="card-body" style="padding:20px;">
                 <div class="form-group">
-                  <label class="form-label">Template</label>
+                  <label class="form-label" style="font-weight:600;">Carregar Template Pré-definido</label>
                   <select class="form-select" id="templateSelect">
                     <option value="">— Selecione um template ou escreva livre —</option>
                   </select>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Mensagem (suporta Spintax e Variáveis)</label>
-                  <textarea class="form-textarea" id="messageTemplateInput" rows="6" placeholder="{Olá|Oi} {primeiro_nome}! {saudacao}!&#10;&#10;Use variáveis: {nome}, {primeiro_nome}, {saudacao}, {profissao}, {regiao}&#10;Use Spintax: {opção1|opção2|opção3}"></textarea>
+                  <label class="form-label" style="font-weight:600;">Texto da Mensagem (com Spintax & Variáveis)</label>
+                  <textarea class="form-textarea" id="messageTemplateInput" rows="5" placeholder="{Olá|Oi} {primeiro_nome}! {saudacao}!&#10;&#10;Use variáveis: {nome}, {primeiro_nome}, {saudacao}, {profissao}, {regiao}&#10;Use Spintax: {opção1|opção2|opção3}"></textarea>
+                  
+                  <!-- Variable Chips Bar -->
+                  <div class="variable-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+                    <button type="button" class="chip-btn" onclick="insertVariable('{primeiro_nome}')">+ {primeiro_nome}</button>
+                    <button type="button" class="chip-btn" onclick="insertVariable('{nome}')">+ {nome}</button>
+                    <button type="button" class="chip-btn" onclick="insertVariable('{saudacao}')">+ {saudacao}</button>
+                    <button type="button" class="chip-btn" onclick="insertVariable('{profissao}')">+ {profissao}</button>
+                    <button type="button" class="chip-btn" onclick="insertVariable('{regiao}')">+ {regiao}</button>
+                    <button type="button" class="chip-btn" onclick="insertVariable('{email}')">+ {email}</button>
+                    <button type="button" class="chip-btn" onclick="insertVariable('{Olá|Oi|Bom dia}')">+ Spintax</button>
+                  </div>
                 </div>
 
-                <div class="grid-2">
+                <!-- Media Attachment -->
+                <div class="form-group" style="background:var(--bg-surface-raised, #f6f7f7); border:1.5px dashed var(--border-color); border-radius:14px; padding:14px; margin-bottom:16px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong style="font-size:0.85rem;"><i class="ti ti-paperclip"></i> Anexo de Mídia (Opcional)</strong>
+                    <span class="text-muted text-sm" id="mediaFileName">Nenhum arquivo</span>
+                  </div>
+                  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <button type="button" class="crx-btn crx-btn-outline crx-btn--sm" onclick="document.getElementById('dispatcherMediaInput').click()">
+                      <i class="ti ti-upload"></i> Escolher Mídia (Imagem/Áudio/PDF/Vídeo)
+                    </button>
+                    <input type="file" id="dispatcherMediaInput" accept="image/*,video/*,audio/*,application/pdf" style="display:none">
+                    <button type="button" class="crx-btn crx-btn-danger crx-btn--sm" id="btnRemoveDispatcherMedia" style="display:none;" onclick="removeDispatcherMedia()">
+                      ✕ Remover Anexo
+                    </button>
+                  </div>
+                  <div id="dispatcherMediaPreview" style="margin-top:8px; display:none;">
+                    <img id="dispatcherMediaPreviewImg" src="" style="max-height:100px; border-radius:10px; border:1px solid var(--border-color);" />
+                    <span id="dispatcherMediaPreviewText" class="text-muted text-sm" style="display:none; margin-top:4px;"></span>
+                  </div>
+                </div>
+
+                <div class="grid-2 gap-3">
                   <div class="form-group">
                     <label class="form-label">Delay Mínimo (s)</label>
                     <input type="number" class="form-input" id="delayMinInput" value="20" min="5" max="120">
@@ -509,119 +757,284 @@
                   </div>
                 </div>
 
+                <!-- Advanced Anti-Ban Batch Pause -->
+                <div class="grid-2 gap-3" style="background:var(--bg-surface-raised, #f6f7f7); border-radius:14px; padding:12px; border:1px solid var(--border-color-light); margin-bottom:16px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:12px; font-weight:600;">Pausar a cada (envios)</label>
+                    <input type="number" class="form-input" id="batchSizeInput" value="15" min="0" placeholder="0 = Sem pausa">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:12px; font-weight:600;">Pausa em lote (segundos)</label>
+                    <input type="number" class="form-input" id="batchPauseInput" value="90" min="5" placeholder="Segundos de descanso">
+                  </div>
+                </div>
+
                 <div class="form-group">
-                  <label class="form-label">Enviar via</label>
+                  <label class="form-label" style="font-weight:600;">Enviar via Linha WhatsApp</label>
                   <select class="form-select" id="instanceSelectDispatcher">
-                    <option value="round-robin"> Revezamento (Round-Robin)</option>
+                    <option value="round-robin">🔄 Revezamento Automático (Round-Robin)</option>
                   </select>
                 </div>
 
-                <div class="flex-gap-2 mt-3">
+                <div class="flex-gap-2 mt-3" style="align-items:center;">
                   <label class="switch-toggle">
                     <input type="checkbox" id="chkUpdateSupabase" checked>
                     <span class="switch-slider"></span>
                   </label>
-                  <span style="font-size:13px">Atualizar status no Supabase após envio</span>
+                  <span style="font-size:13px; font-weight:500;">Atualizar status no Supabase após envio</span>
                 </div>
               </div>
             </div>
 
-            <!-- Right: Preview + Actions -->
-            <div>
-              <!-- Preview Card -->
-              <div class="card mb-4">
-                <div class="card-header"><h3>Preview da Mensagem</h3></div>
-                <div class="card-body">
-                  <div style="background:#0d1117; border-radius:12px; padding:16px; min-height:100px;">
-                    <div class="chat-bubble outgoing" style="max-width:100%; margin:0;" id="messagePreviewBubble">
-                      <em class="text-muted">A prévia aparecerá aqui...</em>
+            <!-- Right: Simulated WhatsApp Phone Mockup & Dispatch Controls -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              
+              <!-- WhatsApp Simulation Phone Mockup Card -->
+              <div class="card" style="border-radius:20px; border:1px solid var(--border-color-light); overflow:hidden;">
+                <div class="wa-mockup-header">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="wa-mockup-avatar">
+                      <i class="ti ti-user"></i>
+                    </div>
+                    <div>
+                      <strong class="wa-mockup-name">Maria Mickaele</strong>
+                      <span class="wa-mockup-status">online • Exemplo de Lead</span>
                     </div>
                   </div>
-                  <div class="flex-gap-2 mt-3">
-                    <button class="btn btn-sm btn-ghost" id="btnRefreshPreview"> Nova Variação</button>
-                    <button class="btn btn-sm btn-emerald" id="btnSendTest"> Enviar Teste</button>
+                  <div style="display:flex; gap:12px; color:#fff; opacity:0.8; font-size:18px;">
+                    <i class="ti ti-video"></i>
+                    <i class="ti ti-phone"></i>
+                    <i class="ti ti-dots-vertical"></i>
                   </div>
+                </div>
+
+                <div class="wa-mockup-chat">
+                  <div class="wa-mockup-bubble" id="messagePreviewBubble">
+                    <span style="color:#888;">A prévia da mensagem aparecerá aqui...</span>
+                  </div>
+                </div>
+
+                <div class="card-footer flex-between" style="padding:12px 16px; background:var(--bg-surface);">
+                  <button class="crx-btn crx-btn-ghost crx-btn--sm" id="btnRefreshPreview">
+                    <i class="ti ti-refresh"></i> Nova Variação Spintax
+                  </button>
+                  <button class="crx-btn crx-btn-outline crx-btn--sm" id="btnSendTest">
+                    <i class="ti ti-send"></i> Teste Rápido
+                  </button>
                 </div>
               </div>
 
-              <!-- Campaign Progress -->
-              <div class="campaign-progress" id="campaignProgressBox">
+              <!-- Campaign Progress (hidden by default) -->
+              <div class="campaign-progress" id="campaignProgressBox" style="border-radius:18px;">
                 <div class="flex-between">
-                  <strong id="progressStatusTitle">Preparando...</strong>
-                  <span id="progressPct">0%</span>
+                  <strong id="progressStatusTitle">Preparando disparo...</strong>
+                  <span id="progressPct" style="font-weight:700;">0%</span>
                 </div>
-                <div class="progress-bar-track">
-                  <div class="progress-bar-fill" id="progressBarFill" style="width:0%"></div>
+                <div class="progress-bar-track" style="height:10px; border-radius:5px; margin:8px 0;">
+                  <div class="progress-bar-fill" id="progressBarFill" style="width:0%; border-radius:5px;"></div>
                 </div>
                 <div class="progress-stats">
                   <span>Progresso: <strong id="progressCountText">0 / 0</strong></span>
-                  <span><strong id="progressSuccessText">0</strong> |  <strong id="progressFailText">0</strong></span>
+                  <span>🟢 Sucessos: <strong id="progressSuccessText">0</strong> | 🔴 Falhas: <strong id="progressFailText">0</strong></span>
                 </div>
               </div>
 
-              <!-- Action Buttons -->
-              <div class="flex-gap-2 mt-3">
-                <button class="btn btn-lg btn-emerald" id="btnStartCampaign" style="flex:1">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                  </svg>
-                  Iniciar Disparo em Massa
+              <!-- Action Launch Button -->
+              <div class="flex-gap-2">
+                <button class="crx-btn crx-btn-primary" id="btnStartCampaign" style="flex:1; justify-content:center; padding:14px 24px; font-size:1rem; border-radius:16px;">
+                  <i class="ti ti-player-play" style="font-size:1.2rem;"></i> Iniciar Disparo em Massa
                 </button>
-                <button class="btn btn-warning btn-sm" id="btnPauseCampaign" style="display:none">⏸ Pausar</button>
-                <button class="btn btn-danger btn-sm" id="btnStopCampaign" style="display:none">⏹ Parar</button>
+                <button class="crx-btn crx-btn-outline" id="btnPauseCampaign" style="display:none; padding:14px 18px; border-radius:16px;">⏸ Pausar</button>
+                <button class="crx-btn crx-btn-danger" id="btnStopCampaign" style="display:none; padding:14px 18px; border-radius:16px;">⏹ Parar</button>
               </div>
+
             </div>
           </div>
 
           <!-- Activity Log -->
-          <div class="card mt-4">
-            <div class="card-header">
-              <h3>Log de Atividade</h3>
+          <div class="card mt-4" style="border-radius:20px; border:1px solid var(--border-color-light); overflow:hidden;">
+            <div class="card-header flex-between" style="padding:14px 20px; border-bottom:1px solid var(--border-color-light);">
+              <h3 style="font-size:0.95rem; font-weight:700; margin:0;"><i class="ti ti-terminal-2" style="margin-right:6px;"></i> Log de Atividade & Envio</h3>
               <div class="flex-gap-2">
-                <button class="btn btn-sm btn-ghost" onclick="DispatcherModule.clearLogs()">Limpar</button>
-                <button class="btn btn-sm btn-ghost" onclick="DispatcherModule.exportLogsToCsv()"> Exportar CSV</button>
+                <button class="crx-btn crx-btn-ghost crx-btn--sm" onclick="DispatcherModule.clearLogs()"><i class="ti ti-trash"></i> Limpar</button>
+                <button class="crx-btn crx-btn-ghost crx-btn--sm" onclick="DispatcherModule.exportLogsToCsv()"><i class="ti ti-download"></i> Exportar CSV</button>
               </div>
             </div>
-            <div class="card-body">
-              <div class="log-console" id="activityLogConsole">
-                <div class="log-entry log-system"><span class="log-time">[Sistema]</span><span class="log-msg">Unico pronto.</span></div>
+            <div class="card-body" style="padding:0;">
+              <div class="log-console" id="activityLogConsole" style="max-height:220px; border-radius:0;">
+                <div class="log-entry log-system"><span class="log-time">[Sistema]</span><span class="log-msg">Unico pronto para disparos.</span></div>
               </div>
             </div>
           </div>
+
         </div>
 
         <!-- ============================================================ -->
         <!-- TAB: TEMPLATES -->
         <!-- ============================================================ -->
+        <!-- ============================================================ -->
+        <!-- TAB: TEMPLATES -->
+        <!-- ============================================================ -->
         <div class="tab-panel" id="tab-templates">
-          <div class="tab-panel-header flex-between">
-            <div>
-              <h2>Templates de Mensagens</h2>
-              <p>Gerencie seus templates com suporte a Spintax e variáveis dinâmicas.</p>
+
+          <!-- Page Header (Crextio style) -->
+          <div class="contacts-page-header">
+            <div class="contacts-page-title-row">
+              <div>
+                <h1 class="contacts-page-title">Templates de Mensagens</h1>
+                <p class="contacts-page-subtitle">Crie, teste e organize modelos de mensagens com suporte a Spintax e variáveis dinâmicas.</p>
+              </div>
+              <div class="contacts-header-actions">
+                <button class="crx-btn crx-btn-primary" onclick="TemplatesModule.openTemplateModal()"><i class="ti ti-plus"></i> Novo Template</button>
+              </div>
             </div>
-            <button class="btn btn-primary" id="btnNewTemplate">+ Novo Template</button>
+
+            <!-- Stats Bar -->
+            <div class="contacts-stats-bar" id="templatesStatsBar">
+              <div class="stat-pill stat-pill--total">
+                <span class="stat-pill__label">Total</span>
+                <span class="stat-pill__value" id="statTotalTemplates">0</span>
+              </div>
+              <div class="stat-pill stat-pill--green">
+                <span class="stat-pill__label">Boas-Vindas</span>
+                <span class="stat-pill__value" id="statWelcomeTemplates">0</span>
+              </div>
+              <div class="stat-pill stat-pill--selected">
+                <span class="stat-pill__label">Vendas</span>
+                <span class="stat-pill__value" id="statSalesTemplates">0</span>
+              </div>
+              <div class="stat-pill stat-pill--red">
+                <span class="stat-pill__label">Cobrança</span>
+                <span class="stat-pill__value" id="statBillingTemplates">0</span>
+              </div>
+              <div class="stat-pill stat-pill--yellow">
+                <span class="stat-pill__label">Follow-up</span>
+                <span class="stat-pill__value" id="statFollowupTemplates">0</span>
+              </div>
+            </div>
           </div>
-          <div id="templatesGrid" class="grid-2"></div>
+
+          <!-- Filter Chips Bar -->
+          <div class="contacts-filter-bar">
+            <div class="contacts-filter-chips">
+              <div class="filter-chip filter-chip--search" style="min-width:280px;">
+                <i class="ti ti-search" style="font-size:14px; color:var(--text-muted);"></i>
+                <input type="text" class="filter-chip__input" id="templateSearchInput" placeholder="Buscar template por nome ou texto..." oninput="TemplatesModule.renderTemplatesGrid()">
+              </div>
+              <div class="filter-chip filter-chip--select">
+                <select class="filter-chip__select" id="templateCategoryFilter" onchange="TemplatesModule.renderTemplatesGrid()">
+                  <option value="all">Todas as Categorias ▾</option>
+                  <option value="Boas-Vindas">Boas-Vindas</option>
+                  <option value="Vendas">Vendas / Ofertas</option>
+                  <option value="Diagnóstico">Diagnóstico</option>
+                  <option value="Cobrança">Cobrança</option>
+                  <option value="Follow-up">Follow-up</option>
+                  <option value="Geral">Geral</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Templates List Table (Crextio style) -->
+          <div class="crx-table-wrapper">
+            <table class="crx-table">
+              <thead>
+                <tr>
+                  <th style="min-width: 180px;">Nome do Template</th>
+                  <th style="width: 130px;">Categoria</th>
+                  <th>Mensagem / Conteúdo</th>
+                  <th style="width: 160px;">Variáveis</th>
+                  <th class="crx-th-actions" style="width: 150px; text-align: center;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="templatesListBody">
+                <tr><td colspan="5" class="crx-td-empty">Carregando templates...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="contacts-table-footer">
+            <span class="text-muted text-sm" id="templatesCountLabel">0 templates cadastrados</span>
+          </div>
+
         </div>
 
         <!-- ============================================================ -->
         <!-- TAB: LOGS & RELATÓRIOS -->
         <!-- ============================================================ -->
         <div class="tab-panel" id="tab-logs">
-          <div class="tab-panel-header">
-            <h2>Logs & Relatórios de Envio</h2>
-            <p>Histórico detalhado de todas as mensagens enviadas.</p>
-          </div>
-          <div class="card">
-            <div class="card-body" style="padding:0">
-              <div class="table-container">
-                <table>
-                  <thead><tr><th>Hora</th><th>Contato</th><th>Telefone</th><th>Mensagem</th><th>Status</th><th>Detalhes</th></tr></thead>
-                  <tbody id="logsHistoryTableBody"><tr><td colspan="6" class="text-center text-muted py-8">Nenhum envio registrado nesta sessão.</td></tr></tbody>
-                </table>
+
+          <!-- Page Header (Crextio style) -->
+          <div class="contacts-page-header">
+            <div class="contacts-page-title-row">
+              <div>
+                <h1 class="contacts-page-title">Logs & Relatórios de Envio</h1>
+                <p class="contacts-page-subtitle">Histórico detalhado e auditoria de todas as mensagens disparadas, entregas e motivos de erro.</p>
+              </div>
+              <div class="contacts-header-actions">
+                <button class="crx-btn crx-btn-ghost" onclick="LogsModule.fetchAndRenderLogs()"><i class="ti ti-refresh"></i> Atualizar</button>
+                <button class="crx-btn crx-btn-outline" onclick="LogsModule.exportLogsCsv()"><i class="ti ti-download"></i> Exportar CSV</button>
+                <button class="crx-btn crx-btn-danger" onclick="LogsModule.clearAllLogs()"><i class="ti ti-trash"></i> Limpar Logs</button>
+              </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="contacts-stats-bar" id="logsStatsBar">
+              <div class="stat-pill stat-pill--total">
+                <span class="stat-pill__label">Total Registrado</span>
+                <span class="stat-pill__value" id="statLogsTotal">0</span>
+              </div>
+              <div class="stat-pill stat-pill--green">
+                <span class="stat-pill__label">Enviadas (Sucesso)</span>
+                <span class="stat-pill__value" id="statLogsSuccess">0</span>
+              </div>
+              <div class="stat-pill stat-pill--red">
+                <span class="stat-pill__label">Falhas / Não Enviadas</span>
+                <span class="stat-pill__value" id="statLogsFailed">0</span>
+              </div>
+              <div class="stat-pill stat-pill--selected">
+                <span class="stat-pill__label">Taxa de Sucesso</span>
+                <span class="stat-pill__value" id="statLogsSuccessRate">0%</span>
               </div>
             </div>
           </div>
+
+          <!-- Filter & Search Toolbar -->
+          <div class="contacts-toolbar mb-4" style="background:var(--bg-surface); padding:12px 16px; border-radius:16px; border:1px solid var(--border-color-light); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div class="contacts-filter-chips" style="margin:0; display:flex; gap:6px;">
+              <button class="filter-chip active" data-log-filter="all" onclick="LogsModule.setFilter('all')">Todos (<span id="countLogsFilterAll">0</span>)</button>
+              <button class="filter-chip" data-log-filter="success" onclick="LogsModule.setFilter('success')">🟢 Enviadas (<span id="countLogsFilterSuccess">0</span>)</button>
+              <button class="filter-chip" data-log-filter="error" onclick="LogsModule.setFilter('error')">🔴 Não Enviadas / Erros (<span id="countLogsFilterError">0</span>)</button>
+            </div>
+            <div class="top-search-wrapper" style="margin:0; min-width:280px; flex:1; max-width:400px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="2" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" class="top-search-input" id="logsSearchInput" placeholder="Buscar por contato, número, mensagem, erro..." oninput="LogsModule.renderTable()">
+            </div>
+          </div>
+
+          <!-- Logs Table Container -->
+          <div class="card" style="border-radius:20px; border:1px solid var(--border-color-light); overflow:hidden;">
+            <div class="table-container" style="max-height:600px; overflow-y:auto;">
+              <table class="crx-table" id="logsHistoryTable">
+                <thead>
+                  <tr>
+                    <th style="width:140px;">Horário</th>
+                    <th style="width:200px;">Destinatário</th>
+                    <th style="width:150px;">WhatsApp / Linha</th>
+                    <th>Mensagem / Conteúdo</th>
+                    <th style="width:140px;">Status</th>
+                    <th style="width:240px;">Motivo do Erro / Detalhes</th>
+                  </tr>
+                </thead>
+                <tbody id="logsHistoryTableBody">
+                  <tr><td colspan="6" class="text-center text-muted py-8">Carregando logs de envio...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
 
         <!-- ============================================================ -->
@@ -656,8 +1069,8 @@
             </div>
           </div>
 
-          <!-- Agent Cards -->
-          <div class="grid-3" id="aiAgentsGrid">
+          <!-- Agent List -->
+          <div id="aiAgentsGrid" style="display: flex; flex-direction: column; gap: 0.75rem;">
             <!-- Renderizado dinamicamente no JS -->
           </div>
         </div>
@@ -752,12 +1165,152 @@
   <!-- MODALS -->
   <!-- ================================================================== -->
 
+  <!-- New List Modal -->
+  <div class="modal-overlay" id="newListModal">
+    <div class="modal-box" style="max-width:480px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="listModalTitle"><i class="ti ti-layout-list" style="margin-right:0.4rem;"></i> Nova Lista de Envio</h3>
+        <button class="modal-close" onclick="closeNewListModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="listEditId">
+        <div class="form-group">
+          <label class="form-label">Nome da Lista *</label>
+          <input type="text" class="form-input" id="listName" placeholder="Ex: Leads Quentes, Turma Julho...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descrição (opcional)</label>
+          <input type="text" class="form-input" id="listDesc" placeholder="Descreva para que serve esta lista">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cor</label>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <label style="cursor:pointer;"><input type="radio" name="listColor" value="#3b82f6" checked> <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#3b82f6;vertical-align:middle;"></span></label>
+            <label style="cursor:pointer;"><input type="radio" name="listColor" value="#10b981"> <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#10b981;vertical-align:middle;"></span></label>
+            <label style="cursor:pointer;"><input type="radio" name="listColor" value="#f59e0b"> <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#f59e0b;vertical-align:middle;"></span></label>
+            <label style="cursor:pointer;"><input type="radio" name="listColor" value="#ef4444"> <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#ef4444;vertical-align:middle;"></span></label>
+            <label style="cursor:pointer;"><input type="radio" name="listColor" value="#8b5cf6"> <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#8b5cf6;vertical-align:middle;"></span></label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeNewListModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveList()">Salvar Lista</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Contacts to List Modal -->
+  <div class="modal-overlay" id="addToListModal">
+    <div class="modal-box" style="max-width:560px; max-height:80vh; display:flex; flex-direction:column;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="addToListTitle"><i class="ti ti-user-plus" style="margin-right:0.4rem;"></i> Adicionar Contatos à Lista</h3>
+        <button class="modal-close" onclick="document.getElementById('addToListModal').classList.remove('active')"></button>
+      </div>
+      <div class="modal-body" style="flex:1; overflow-y:auto;">
+        <input type="hidden" id="addToListId">
+        <div class="form-group">
+          <input type="text" class="form-input" id="addToListSearch" placeholder="Buscar contato..." oninput="filterAddToListContacts(this.value)">
+        </div>
+        <div id="addToListContactsList" style="display:flex; flex-direction:column; gap:0.5rem; max-height:350px; overflow-y:auto;">
+          <p class="text-muted text-sm text-center">Carregando...</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="document.getElementById('addToListModal').classList.remove('active')">Fechar</button>
+        <button class="btn btn-primary" onclick="confirmAddToList()">Adicionar Selecionados</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Single Contact Add To List Modal -->
+  <div class="modal-overlay" id="singleContactAddToListModal">
+    <div class="modal-box" style="max-width:480px; max-height:85vh; display:flex; flex-direction:column;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="singleContactModalTitle"><i class="ti ti-playlist-add" style="margin-right:0.4rem;"></i> Adicionar à Lista</h3>
+          <p class="text-muted text-sm" id="singleContactModalSubtitle" style="margin-top:2px;"></p>
+        </div>
+        <button class="modal-close" onclick="closeSingleContactAddToListModal()"></button>
+      </div>
+      <div class="modal-body" style="flex:1; overflow-y:auto; padding-top: 1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <strong style="font-size:0.875rem;">Selecione a(s) lista(s):</strong>
+          <button type="button" class="btn btn-sm btn-ghost" onclick="openNewListFromSingleContactModal()" style="color:var(--brand-primary); font-size:12px;">
+            + Criar nova lista
+          </button>
+        </div>
+
+        <div id="singleContactListsContainer" style="display:flex; flex-direction:column; gap:8px;">
+          <p class="text-muted text-sm text-center">Carregando listas...</p>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="text-muted text-sm" id="singleContactStatusFooter"></span>
+        <button class="btn btn-primary btn-sm" onclick="closeSingleContactAddToListModal()">Concluído</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Contact Modal -->
+  <div class="modal-overlay" id="editContactModal">
+    <div class="modal-box" style="max-width:500px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="editContactModalTitle"><i class="ti ti-user-edit" style="margin-right:0.4rem;"></i> Editar Contato</h3>
+        <button class="modal-close" onclick="closeEditContactModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editContactId">
+
+        <div class="form-group">
+          <label class="form-label">Nome Completo</label>
+          <input type="text" class="form-input" id="editContactName" placeholder="Ex: Maria Silva">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">WhatsApp / Telefone</label>
+          <input type="text" class="form-input" id="editContactPhone" placeholder="Ex: (61) 99877-7769">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">E-mail</label>
+          <input type="email" class="form-input" id="editContactEmail" placeholder="Ex: cliente@email.com">
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Profissão / Ocupação</label>
+            <input type="text" class="form-input" id="editContactProfession" placeholder="Ex: Advogada">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Região / Estado</label>
+            <input type="text" class="form-input" id="editContactRegion" placeholder="Ex: Distrito Federal (DF)">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status Financeiro (Raio X)</label>
+          <select class="form-select" id="editContactStatus">
+            <option value="Vermelho">🔴 Vermelho (Crítico / Risco Alto)</option>
+            <option value="Amarelo">🟡 Amarelo (Atenção / Risco Moderado)</option>
+            <option value="Verde">🟢 Verde (Estável / Saudável)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeEditContactModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveContactEdits()">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Test Message Modal -->
   <div class="modal-overlay" id="testMessageModal">
     <div class="modal-box">
       <div class="modal-header">
         <h3 class="modal-title"> Enviar Mensagem de Teste</h3>
         <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')"></button>
+
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -809,64 +1362,312 @@
   <!-- SCRIPTS -->
   <!-- ================================================================== -->
   <script src="js/supabase.js?v=2"></script>
-  <!-- Modal Criar/Editar Agente -->
-  <div id="agentModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-    <div class="card" style="width: 100%; max-width: 500px; background: var(--bg-card); max-height: 90vh; overflow-y: auto;">
-      <div class="card-header flex-between">
-        <h3 id="agentModalTitle">Novo Agente de IA</h3>
-        <button class="btn btn-sm" onclick="closeAgentModal()" style="background:transparent; color:var(--text-main); font-size:20px;">&times;</button>
+  <!-- Modal Criar/Editar Agente de IA com Template Estruturado -->
+  <div class="modal-overlay" id="agentModal">
+    <div class="modal-box" style="max-width:780px; max-height:92vh; overflow-y:auto;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="agentModalTitle"><i class="ti ti-robot" style="margin-right:0.4rem;"></i> Novo Agente de IA</h3>
+        <button class="modal-close" onclick="closeAgentModal()"></button>
       </div>
-      <div class="card-body">
+      <div class="modal-body" style="padding:1.25rem;">
         <form id="agentForm" onsubmit="saveAgent(event)">
           <input type="hidden" id="agentId">
-          <div class="mb-3">
-            <label class="form-label">Nome do Agente</label>
-            <input type="text" id="agentName" class="form-input" required placeholder="Ex: Negociador">
-          </div>
-          <div class="grid-2 gap-3 mb-3">
-            <div>
-              <label class="form-label">Ícone (Emoji)</label>
-              <input type="text" id="agentIcon" class="form-input" required placeholder="Ex: 🤝" maxlength="5">
+
+          <!-- SECTION 1: Papel e Função -->
+          <div class="agent-form-section mb-4" style="background:var(--bg-surface-raised, #f8fafc); border:1px solid var(--border-color-light); border-radius:16px; padding:16px;">
+            <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <span style="background:var(--brand-primary, #d4f938); color:#111; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">1</span>
+              Papel e Função (Quem sou eu e qual meu objetivo?)
             </div>
-            <div>
-              <label class="form-label">Cor do Cartão</label>
-              <select id="agentTheme" class="form-select">
-                <option value="blue">Azul Pastel</option>
-                <option value="yellow">Amarelo Pastel</option>
-                <option value="green">Verde Pastel</option>
-                <option value="purple">Roxo Pastel</option>
-              </select>
+            
+            <div class="grid-3 gap-3 mb-3">
+              <div style="grid-column: span 2;">
+                <label class="form-label" style="font-size:12px; font-weight:600;">Nome do Agente *</label>
+                <input type="text" id="agentName" class="form-input" required placeholder="Ex: Assistente Atacama, Luna TechStore, Consultor Financeiro...">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Ícone (Emoji) *</label>
+                <input type="text" id="agentIcon" class="form-input" required placeholder="Ex: 🧠" maxlength="5" value="🤖">
+              </div>
+            </div>
+
+            <div class="grid-2 gap-3 mb-3">
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Função Principal (1-2 frases) *</label>
+                <textarea id="agentRole" class="form-textarea" rows="2" required placeholder="Ex: Dar suporte técnico de nível 1 sobre o software X e orientar novos clientes."></textarea>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Objetivo Final da Interação *</label>
+                <textarea id="agentGoal" class="form-textarea" rows="2" required placeholder="Ex: Resolver a dúvida do usuário de forma acolhedora ou direcionar para um atendente humano."></textarea>
+              </div>
+            </div>
+
+            <div class="grid-2 gap-3">
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Cor do Card / Tema</label>
+                <select id="agentTheme" class="form-select">
+                  <option value="blue">🔵 Azul Pastel</option>
+                  <option value="yellow">🟡 Amarelo Pastel</option>
+                  <option value="green">🟢 Verde Pastel</option>
+                  <option value="purple">🟣 Roxo Pastel</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Modo Padrão de Atuação</label>
+                <select id="agentMode" class="form-select">
+                  <option value="autonomous" selected>⚡ Autônomo (Responde sozinho no WhatsApp)</option>
+                  <option value="copilot">🤝 Co-Piloto (Sugere resposta no chat)</option>
+                </select>
+              </div>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Descrição Curta</label>
-            <input type="text" id="agentDesc" class="form-input" required placeholder="Ex: Especialista em negociação de descontos">
+
+          <!-- SECTION 2: Personalidade e Tom de Voz -->
+          <div class="agent-form-section mb-4" style="background:var(--bg-surface-raised, #f8fafc); border:1px solid var(--border-color-light); border-radius:16px; padding:16px;">
+            <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <span style="background:var(--brand-primary, #d4f938); color:#111; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">2</span>
+              Personalidade e Tom de Voz (Como devo me comportar?)
+            </div>
+
+            <div class="grid-2 gap-3 mb-3">
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Estilo de Comunicação</label>
+                <input type="text" id="agentCommStyle" class="form-input" placeholder="Ex: Descontraído, moderno, empático e ágil">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Tom de Voz</label>
+                <input type="text" id="agentTone" class="form-input" placeholder="Ex: Educado, acolhedor, direto ao ponto, paciente">
+              </div>
+            </div>
+
+            <div class="grid-2 gap-3">
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Uso de Emojis</label>
+                <select id="agentEmojiPolicy" class="form-select">
+                  <option value="Usar com moderação (1 a 2 emojis por mensagem) para manter o tom amigável">✨ Usar com moderação (1 a 2 emojis)</option>
+                  <option value="Não utilizar emojis">🚫 Não utilizar emojis</option>
+                  <option value="Uso livre e expressivo de emojis">🎨 Uso frequente e expressivo</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Idioma / Regionalismo</label>
+                <input type="text" id="agentLanguage" class="form-input" value="Português do Brasil natural para WhatsApp (sem formalidades excessivas)">
+              </div>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Instruções / Prompt (Opcional)</label>
-            <textarea id="agentPrompt" class="form-input" rows="4" placeholder="Ex: Responda de forma persuasiva..."></textarea>
+
+          <!-- SECTION 3: Restrições e Limites -->
+          <div class="agent-form-section mb-4" style="background:var(--bg-surface-raised, #f8fafc); border:1px solid var(--border-color-light); border-radius:16px; padding:16px;">
+            <div style="font-size:14px; font-weight:700; color:#b91c1c; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <span style="background:#fee2e2; color:#b91c1c; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">3</span>
+              Restrições e Limites — "O que NÃO devo falar"
+            </div>
+
+            <div class="grid-2 gap-3 mb-3">
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Assuntos Proibidos</label>
+                <textarea id="agentForbiddenTopics" class="form-textarea" rows="2" placeholder="Ex: Não falar sobre política, religião, concorrentes ou assuntos pessoais."></textarea>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Informações Confidenciais</label>
+                <textarea id="agentConfidentialPolicy" class="form-textarea" rows="2" placeholder="Ex: Nunca solicitar nem divulgar senhas, dados de cartão de crédito ou CPF de terceiros."></textarea>
+              </div>
+            </div>
+
+            <div class="grid-2 gap-3">
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Limites de Conhecimento</label>
+                <textarea id="agentKnowledgeLimits" class="form-textarea" rows="2" placeholder='Ex: Se não souber a resposta, não invente. Diga: "Não tenho essa informação no momento, mas posso direcioná-lo para a nossa equipe."'></textarea>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:12px; font-weight:600;">Tom e Promessas a Evitar</label>
+                <textarea id="agentToneAvoid" class="form-textarea" rows="2" placeholder="Ex: Nunca ser irônico, defensivo ou confrontador. Não prometer prazos ou descontos não documentados."></textarea>
+              </div>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Modo Padrão</label>
-            <select id="agentMode" class="form-select">
-              <option value="autonomous">Autônomo (Responde sozinho)</option>
-              <option value="copilot">Co-Piloto (Sugere resposta)</option>
-            </select>
+
+          <!-- SECTION 4: Conhecimento e Base de Contexto -->
+          <div class="agent-form-section mb-4" style="background:var(--bg-surface-raised, #f8fafc); border:1px solid var(--border-color-light); border-radius:16px; padding:16px;">
+            <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <span style="background:var(--brand-primary, #d4f938); color:#111; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">4</span>
+              Conhecimento e Contexto de Base (O que eu sei?)
+            </div>
+
+            <div class="form-group mb-3">
+              <label class="form-label" style="font-size:12px; font-weight:600;">Informações Principais / Políticas / Regras do Negócio</label>
+              <textarea id="agentMainKnowledge" class="form-textarea" rows="3" placeholder="Ex: Produtos oferecidos, tabela de preços, horários de atendimento, regras de suporte e perguntas frequentes..."></textarea>
+            </div>
+
+            <!-- Knowledge Base Files Upload Box -->
+            <div style="background:var(--bg-surface, #ffffff); border:1.5px dashed var(--border-color); border-radius:14px; padding:14px; text-align:center;">
+              <div style="font-size:12.5px; font-weight:700; color:var(--text-primary); margin-bottom:4px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <i class="ti ti-folder-plus" style="color:var(--brand-primary, #d4f938); font-size:18px;"></i> Anexar Base de Conhecimento (.md, .txt, .pdf)
+              </div>
+              <p style="font-size:11.5px; color:var(--text-muted); margin:0 0 10px;">O agente sempre consultará esses arquivos anexados para responder os clientes com máxima precisão.</p>
+              
+              <input type="file" id="modalContextFileInput" accept=".md,.txt,.pdf" style="display:none" onchange="handleModalContextFileUpload(event)">
+              <button type="button" class="crx-btn crx-btn-outline crx-btn--sm" onclick="document.getElementById('modalContextFileInput').click()">
+                <i class="ti ti-upload"></i> Selecionar Arquivos de Conhecimento
+              </button>
+
+              <div id="modalContextFilesList" style="margin-top:10px; display:flex; flex-direction:column; gap:6px; text-align:left;">
+                <!-- Lista de arquivos anexados carregada dinamicamente -->
+              </div>
+            </div>
           </div>
-          <div class="flex-end gap-2 mt-4">
-            <button type="button" class="btn btn-secondary" onclick="closeAgentModal()">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Salvar Agente</button>
+
+          <!-- SECTION 5: Diretrizes de Resposta e Fluxo -->
+          <div class="agent-form-section mb-4" style="background:var(--bg-surface-raised, #f8fafc); border:1px solid var(--border-color-light); border-radius:16px; padding:16px;">
+            <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <span style="background:var(--brand-primary, #d4f938); color:#111; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">5</span>
+              Diretrizes de Resposta e Fluxo de Atendimento
+            </div>
+
+            <div class="form-group mb-3">
+              <label class="form-label" style="font-size:12px; font-weight:600;">Estrutura da Resposta</label>
+              <input type="text" id="agentResponseStructure" class="form-input" value="Frases curtas para WhatsApp (1 a 3 balões), direto ao ponto e sem textão">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-size:12px; font-weight:600;">Fluxo de Atendimento</label>
+              <textarea id="agentFlow" class="form-textarea" rows="3" placeholder="1. Cumprimentar o usuário pelo nome (se disponível).&#10;2. Entender a necessidade antes de dar a resposta.&#10;3. Oferecer a solução clara.&#10;4. Pergunta de fechamento: 'Posso ajudar com algo mais?'"></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer flex-between" style="padding-top:10px;">
+            <button type="button" class="crx-btn crx-btn-ghost" onclick="closeAgentModal()">Cancelar</button>
+            <button type="submit" class="crx-btn crx-btn-primary"><i class="ti ti-check"></i> Salvar Agente de IA</button>
           </div>
         </form>
       </div>
     </div>
   </div>
+
+  <!-- Modal Novo / Editar Template -->
+  <div class="modal-overlay" id="templateModal">
+    <div class="modal-box" style="max-width:620px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="templateModalTitle"><i class="ti ti-file-text" style="margin-right:0.4rem;"></i> Novo Template de Mensagem</h3>
+        <button class="modal-close" onclick="TemplatesModule.closeTemplateModal()"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="templateEditId">
+
+        <div class="form-group">
+          <label class="form-label">Nome do Template</label>
+          <input type="text" class="form-input" id="templateNameInput" placeholder="Ex: Boas-vindas ao cliente, Lembrete de Reunião...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <select class="form-select" id="templateCategoryInput">
+            <option value="Boas-Vindas">Boas-Vindas</option>
+            <option value="Vendas">Vendas / Ofertas</option>
+            <option value="Diagnóstico">Diagnóstico</option>
+            <option value="Cobrança">Cobrança</option>
+            <option value="Follow-up">Follow-up</option>
+            <option value="Geral" selected>Geral</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Conteúdo da Mensagem</label>
+          <textarea class="form-textarea" id="templateTextInput" rows="6" placeholder="{Olá|Oi} {primeiro_nome}! {saudacao}!&#10;&#10;Escreva sua mensagem aqui..." oninput="TemplatesModule.updateModalPreview()"></textarea>
+          
+          <!-- Chips de Variáveis -->
+          <div class="variable-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+            <button type="button" class="chip-btn" onclick="TemplatesModule.insertVariableInModal('{primeiro_nome}')">+ {primeiro_nome}</button>
+            <button type="button" class="chip-btn" onclick="TemplatesModule.insertVariableInModal('{nome}')">+ {nome}</button>
+            <button type="button" class="chip-btn" onclick="TemplatesModule.insertVariableInModal('{saudacao}')">+ {saudacao}</button>
+            <button type="button" class="chip-btn" onclick="TemplatesModule.insertVariableInModal('{profissao}')">+ {profissao}</button>
+            <button type="button" class="chip-btn" onclick="TemplatesModule.insertVariableInModal('{regiao}')">+ {regiao}</button>
+            <button type="button" class="chip-btn" onclick="TemplatesModule.insertVariableInModal('{email}')">+ {email}</button>
+            <button type="button" class="chip-btn" onclick="TemplatesModule.insertVariableInModal('{Olá|Oi|Bom dia}')">+ Spintax</button>
+          </div>
+        </div>
+
+        <!-- Simulated WhatsApp Preview Box -->
+        <div style="background: var(--bg-surface-raised, #f6f7f7); border: 1px solid var(--border-color-light); border-radius: 16px; padding: 14px; margin-top: 12px;">
+          <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-brand-whatsapp" style="color:#25d366; font-size:16px;"></i> Pré-visualização Simulação WhatsApp
+          </div>
+          <div id="templateModalPreview" style="background:#e5ddd5; color:#111; padding:10px 14px; border-radius:12px; font-size:0.85rem; line-height:1.45; white-space:pre-wrap; max-height:180px; overflow-y:auto; border-left:4px solid #25d366; font-family:-apple-system, BlinkMacSystemFont, sans-serif;">
+            Sua mensagem aparecerá aqui...
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="crx-btn crx-btn-ghost" onclick="TemplatesModule.closeTemplateModal()">Cancelar</button>
+        <button class="crx-btn crx-btn-primary" onclick="TemplatesModule.saveTemplateFromModal()"><i class="ti ti-check"></i> Salvar Template</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalhes do Log de Envio -->
+  <div class="modal-overlay" id="logDetailModal">
+    <div class="modal-box" style="max-width:580px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="logModalTitle"><i class="ti ti-file-analytics" style="margin-right:0.4rem;"></i> Detalhes do Envio</h3>
+        <button class="modal-close" onclick="LogsModule.closeLogModal()"></button>
+      </div>
+      <div class="modal-body">
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div style="background:var(--bg-surface-raised, #f6f7f7); padding:10px 14px; border-radius:12px; border:1px solid var(--border-color-light);">
+            <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Destinatário</div>
+            <div id="logModalContact" style="font-weight:600; font-size:13.5px; color:var(--text-primary); margin-top:2px;">—</div>
+          </div>
+          <div style="background:var(--bg-surface-raised, #f6f7f7); padding:10px 14px; border-radius:12px; border:1px solid var(--border-color-light);">
+            <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Horário / Data</div>
+            <div id="logModalTime" style="font-weight:600; font-size:13px; color:var(--text-primary); margin-top:2px;">—</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div style="background:var(--bg-surface-raised, #f6f7f7); padding:10px 14px; border-radius:12px; border:1px solid var(--border-color-light);">
+            <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Linha WhatsApp</div>
+            <div id="logModalInstance" style="font-weight:600; font-size:13px; color:var(--text-primary); margin-top:2px;">—</div>
+          </div>
+          <div style="background:var(--bg-surface-raised, #f6f7f7); padding:10px 14px; border-radius:12px; border:1px solid var(--border-color-light);">
+            <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Status da Entrega</div>
+            <div style="margin-top:4px;"><span id="logModalStatus" class="badge badge-success">—</span></div>
+          </div>
+        </div>
+
+        <!-- Error Reason Callout Box (if failed) -->
+        <div id="logModalErrorBox" style="display:none; background:#fef2f2; border:1.5px solid #fecaca; border-radius:14px; padding:12px 16px; margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:700; color:#b91c1c; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-alert-triangle"></i> Motivo do Erro / Falha no Envio:
+          </div>
+          <div id="logModalErrorMsg" style="font-size:13px; color:#991b1b; line-height:1.45; font-weight:500;">
+            —
+          </div>
+        </div>
+
+        <!-- Message Content Preview -->
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:600;"><i class="ti ti-message-text"></i> Mensagem Disparada:</label>
+          <div id="logModalMessageText" style="background:#e5ddd5; color:#111; padding:12px 16px; border-radius:12px; font-size:0.85rem; line-height:1.45; white-space:pre-wrap; max-height:180px; overflow-y:auto; border-left:4px solid #25d366; font-family:-apple-system, BlinkMacSystemFont, sans-serif;">
+            —
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer flex-between">
+        <button class="crx-btn crx-btn-ghost" onclick="LogsModule.closeLogModal()">Fechar</button>
+        <button class="crx-btn crx-btn-primary" onclick="LogsModule.retrySelectedLog()"><i class="ti ti-rotate-clockwise"></i> Reenviar Mensagem</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/templates.js?v=2"></script>
   <script src="js/whatsapp-direct.js?v=2"></script>
   <script src="js/dispatcher.js?v=2"></script>
   <script src="js/dashboard.js?v=2"></script>
   <script src="js/ai-copilot.js?v=2"></script>
   <script src="js/contacts-agenda.js?v=2"></script>
+  <script src="js/lists.js?v=1"></script>
+  <script src="js/logs.js?v=1"></script>
   <script src="js/app.js?v=2"></script>
 </body>
 </html>

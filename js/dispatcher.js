@@ -50,10 +50,10 @@ const DispatcherModule = (() => {
   }
 
   async function startDirectCampaign(options) {
-    const { contacts, template, minDelay, maxDelay, updateSupabase, instanceId } = options;
+    const { contacts, template, minDelay, maxDelay, updateSupabase, instanceId, mediaAttachment, batchSize, batchPause } = options;
 
     if (!contacts?.length) throw new Error('Nenhum contato selecionado.');
-    if (!template?.trim()) throw new Error('Mensagem vazia.');
+    if (!template?.trim() && !mediaAttachment) throw new Error('Mensagem ou mídia é obrigatória.');
 
     const wsStatus = await WhatsAppDirect.fetchStatus();
     if (!wsStatus.connected) throw new Error('Nenhum WhatsApp conectado!');
@@ -66,7 +66,7 @@ const DispatcherModule = (() => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: `Campanha ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`,
-          template_text: template,
+          template_text: template || '',
           delay_min: minDelay || 20,
           delay_max: maxDelay || 50,
           total_contacts: contacts.length,
@@ -94,7 +94,8 @@ const DispatcherModule = (() => {
     updateCampaignUI();
 
     const routingInfo = instanceId === 'round-robin' || !instanceId ? 'Revezamento (Round-Robin)' : `Linha: ${instanceId}`;
-    addLog('info', `🚀 Campanha iniciada: ${contacts.length} contatos (${routingInfo})`);
+    const mediaTag = mediaAttachment ? ` 📁 [Mídia Anexada]` : '';
+    addLog('info', `🚀 Campanha iniciada: ${contacts.length} contatos (${routingInfo})${mediaTag}`);
 
     const delayMin = Math.max(2, minDelay || 20);
     const delayMax = Math.max(delayMin, maxDelay || 50);
@@ -110,7 +111,7 @@ const DispatcherModule = (() => {
       campaignState.currentIndex = i;
       const contact = contacts[i];
       const targetPhone = contact.whatsapp || contact.phone;
-      const parsedText = TemplatesModule.parseMessage(template, contact);
+      const parsedText = template ? TemplatesModule.parseMessage(template, contact) : '';
 
       const statusTitle = document.getElementById('progressStatusTitle');
       if (statusTitle) {
@@ -118,19 +119,44 @@ const DispatcherModule = (() => {
       }
 
       try {
-        const sendResult = await WhatsAppDirect.sendMessage(targetPhone, parsedText, {
-          instanceId,
-          contactName: contact.displayName || contact.name,
-          contactId: contact.id,
-          campaignId,
-          simulateTyping: true
-        });
+        let sendResult;
+        if (mediaAttachment && mediaAttachment.base64Data) {
+          sendResult = await WhatsAppDirect.sendMediaMessage(targetPhone, mediaAttachment.base64Data, mediaAttachment.mimeType, parsedText, {
+            instanceId,
+            fileName: mediaAttachment.name || mediaAttachment.fileName,
+            contactName: contact.displayName || contact.name,
+            contactId: contact.id,
+            campaignId,
+            simulateTyping: true
+          });
+        } else {
+          sendResult = await WhatsAppDirect.sendMessage(targetPhone, parsedText, {
+            instanceId,
+            contactName: contact.displayName || contact.name,
+            contactId: contact.id,
+            campaignId,
+            simulateTyping: true
+          });
+        }
+
         campaignState.successCount++;
 
         const tag = sendResult?.instanceName ? ` [${sendResult.instanceName}]` : '';
         addLog('success', `✅ ${contact.displayName || targetPhone}${tag}`, {
-          contactName: contact.displayName, phone: targetPhone, text: parsedText
+          contactName: contact.displayName || contact.name, phone: targetPhone, text: parsedText
         });
+
+        if (typeof LogsModule !== 'undefined' && LogsModule.recordLog) {
+          LogsModule.recordLog({
+            contactName: contact.displayName || contact.name || targetPhone,
+            phone: targetPhone,
+            message: parsedText,
+            media: mediaAttachment?.filename || null,
+            status: 'success',
+            instanceName: sendResult?.instanceName || instanceId || 'WhatsApp Linha 1',
+            campaignName: `Campanha ${new Date().toLocaleDateString('pt-BR')}`
+          });
+        }
 
         if (updateSupabase && contact.id) {
           try { await SupabaseModule.updateContactStatus(contact.id, 'Contatado'); } catch (e) {}
@@ -138,22 +164,49 @@ const DispatcherModule = (() => {
       } catch (err) {
         campaignState.failCount++;
         addLog('error', `❌ ${contact.displayName || targetPhone}: ${err.message}`, {
-          contactName: contact.displayName, phone: targetPhone, text: parsedText, error: err.message
+          contactName: contact.displayName || contact.name, phone: targetPhone, text: parsedText, error: err.message
         });
+
+        if (typeof LogsModule !== 'undefined' && LogsModule.recordLog) {
+          LogsModule.recordLog({
+            contactName: contact.displayName || contact.name || targetPhone,
+            phone: targetPhone,
+            message: parsedText,
+            media: mediaAttachment?.filename || null,
+            status: 'error',
+            errorReason: err.message || 'Erro de envio',
+            instanceName: instanceId || 'WhatsApp Linha 1',
+            campaignName: `Campanha ${new Date().toLocaleDateString('pt-BR')}`
+          });
+        }
       }
 
       updateCampaignUI();
 
-      // Delay anti-ban
+      // Delay e Pausa em Lote Anti-Ban
       if (i < contacts.length - 1 && !campaignState.isStopped) {
-        const randomDelay = Math.floor(Math.random() * (delayMax - delayMin + 1)) + delayMin;
-        for (let s = randomDelay; s > 0; s--) {
-          if (campaignState.isStopped) break;
-          while (campaignState.isPaused && !campaignState.isStopped) {
-            await new Promise(r => setTimeout(r, 500));
+        // Pausa especial por lote
+        if (batchSize > 0 && batchPause > 0 && (i + 1) % batchSize === 0) {
+          addLog('info', `☕ Pausa de descanso anti-ban (${i + 1} disparos concluídos). Aguardando ${batchPause}s...`);
+          for (let s = batchPause; s > 0; s--) {
+            if (campaignState.isStopped) break;
+            while (campaignState.isPaused && !campaignState.isStopped) {
+              await new Promise(r => setTimeout(r, 500));
+            }
+            if (statusTitle) statusTitle.textContent = `☕ Pausa anti-ban por lote (${s}s restantes)...`;
+            await new Promise(r => setTimeout(r, 1000));
           }
-          if (statusTitle) statusTitle.textContent = `⏳ Aguardando ${s}s (anti-bloqueio)...`;
-          await new Promise(r => setTimeout(r, 1000));
+        } else {
+          // Delay randômico padrão entre mensagens
+          const randomDelay = Math.floor(Math.random() * (delayMax - delayMin + 1)) + delayMin;
+          for (let s = randomDelay; s > 0; s--) {
+            if (campaignState.isStopped) break;
+            while (campaignState.isPaused && !campaignState.isStopped) {
+              await new Promise(r => setTimeout(r, 500));
+            }
+            if (statusTitle) statusTitle.textContent = `⏳ Aguardando ${s}s (anti-bloqueio)...`;
+            await new Promise(r => setTimeout(r, 1000));
+          }
         }
       }
     }

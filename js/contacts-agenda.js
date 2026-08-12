@@ -175,10 +175,17 @@ const ContactsAgendaModule = (function () {
             }
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-            const parsed = normalizeImportedRows(jsonRows);
+            let allRows = [];
+            workbook.SheetNames.forEach(sheetName => {
+              const worksheet = workbook.Sheets[sheetName];
+              if (worksheet) {
+                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                if (jsonRows && jsonRows.length > 0) {
+                  allRows = allRows.concat(jsonRows);
+                }
+              }
+            });
+            const parsed = normalizeImportedRows(allRows);
             resolve(parsed);
           } catch (err) {
             reject(err);
@@ -419,7 +426,10 @@ const ContactsAgendaModule = (function () {
                 ${initials}
               </div>
               <div class="agenda-contact-info">
-                <strong class="agenda-contact-name">${escapeHtml(contact.name || 'Sem Nome')}</strong>
+                <a href="javascript:void(0)" class="contact-name-link" onclick="event.stopPropagation(); window.openSingleContactAddToListModal('${contact.id}')" title="Clique para adicionar a uma lista">
+                  <strong class="agenda-contact-name">${escapeHtml(contact.name || 'Sem Nome')}</strong>
+                  <i class="ti ti-playlist-add" style="font-size:0.85rem; color:var(--brand-primary); opacity:0.6;"></i>
+                </a>
                 <div class="agenda-contact-meta">
                   ${contact.email ? `<span class="contact-email">${escapeHtml(contact.email)}</span>` : ''}
                   ${contact.region ? `<span class="contact-region">📍 ${escapeHtml(contact.region)}</span>` : ''}

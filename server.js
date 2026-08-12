@@ -31,6 +31,107 @@ function saveUsers() {
   fs.writeFileSync(AUTH_FILE, JSON.stringify(usersDB, null, 2), 'utf8');
 }
 
+// LISTS CONFIGURATION
+const LISTS_FILE = path.join(__dirname, 'lists.json');
+let listsDB = [];
+try {
+  if (fs.existsSync(LISTS_FILE)) {
+    listsDB = JSON.parse(fs.readFileSync(LISTS_FILE, 'utf8'));
+  }
+} catch (e) { console.error('Erro ao ler lists.json'); }
+
+const DEFAULT_LISTS = [
+  { id: 'list_quente', name: '🔥 Quente', color: '#ef4444', description: 'Leads com alto interesse', contacts: [], createdAt: new Date().toISOString() },
+  { id: 'list_morno', name: '☀️ Morno', color: '#f59e0b', description: 'Leads em qualificação', contacts: [], createdAt: new Date().toISOString() },
+  { id: 'list_frio', name: '❄️ Frio', color: '#3b82f6', description: 'Leads topo de funil', contacts: [], createdAt: new Date().toISOString() }
+];
+
+let listsModified = false;
+DEFAULT_LISTS.forEach(def => {
+  if (!listsDB.some(l => l.id === def.id || l.name.includes('Quente') && def.id === 'list_quente' || l.name.includes('Morno') && def.id === 'list_morno' || l.name.includes('Frio') && def.id === 'list_frio')) {
+    listsDB.push(def);
+    listsModified = true;
+  }
+});
+
+function saveLists() {
+  fs.writeFileSync(LISTS_FILE, JSON.stringify(listsDB, null, 2), 'utf8');
+}
+
+if (listsModified || listsDB.length === 0) {
+  saveLists();
+}
+
+// TEMPLATES CONFIGURATION
+const TEMPLATES_FILE = path.join(__dirname, 'database', 'templates.json');
+let templatesDB = [];
+try {
+  if (fs.existsSync(TEMPLATES_FILE)) {
+    templatesDB = JSON.parse(fs.readFileSync(TEMPLATES_FILE, 'utf8'));
+  }
+} catch (e) { console.error('Erro ao ler templates.json'); }
+
+const DEFAULT_TEMPLATES = [
+  {
+    id: 'tmpl-1',
+    name: 'Boas-vindas ao Raio X Financeiro',
+    category: 'Boas-Vindas',
+    text: '{Olá|Oi} {primeiro_nome}! {Tudo bem?|Como vai?}\n\n{saudacao}! Vi que você se cadastrou no *Raio X Financeiro* da Ex Devedor. 🚀\n\nEstamos preparando uma análise personalizada para te ajudar a organizar suas receitas e eliminar dívidas de forma inteligente.\n\nVocê já conseguiu preencher todos os seus dados no diagnóstico?'
+  },
+  {
+    id: 'tmpl-2',
+    name: 'Diagnóstico Financeiro Pronto',
+    category: 'Diagnóstico',
+    text: '{saudacao}, {primeiro_nome}! 👋\n\nAqui é da equipe de consultoria do *Raio X Financeiro*.\n\nNotamos que você atua na área de *{profissao}* em *{regiao}*. Temos estratégias específicas para o seu perfil financeiro que podem acelerar a sua recuperação e multiplicar seu saldo positivo.\n\nGostaria de receber uma análise gratuita dos seus pontos de melhoria?'
+  },
+  {
+    id: 'tmpl-3',
+    name: 'Convite para Mentoria / Transformação',
+    category: 'Vendas',
+    text: 'Olá {primeiro_nome}, {saudacao}! 🌟\n\nPassando para te fazer um convite exclusivo: abrimos algumas vagas para a nossa *Sessão Estratégica de Mentoria Financeira*.\n\nVamos analisar juntos o seu fluxo de despesas e traçar um plano de ação direto ao ponto.\n\nSe tiver interesse em garantir sua vaga, me responde aqui com um *\"QUERO\"*!'
+  },
+  {
+    id: 'tmpl-4',
+    name: 'Reengajamento & Acompanhamento',
+    category: 'Follow-up',
+    text: 'Oi {primeiro_nome}! Tudo bem por aí?\n\nPassando para saber como estão as coisas e se você conseguiu avançar no seu planejamento financeiro este mês.\n\nSe precisar de qualquer apoio ou tirar dúvidas sobre o *Raio X*, estou à disposição por aqui! 👍'
+  }
+];
+
+function saveTemplates() {
+  try {
+    const dir = path.dirname(TEMPLATES_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(TEMPLATES_FILE, JSON.stringify(templatesDB, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Erro ao salvar templates.json:', err);
+  }
+}
+
+if (!templatesDB || templatesDB.length === 0) {
+  templatesDB = [...DEFAULT_TEMPLATES];
+  saveTemplates();
+}
+
+// DISPATCH LOGS CONFIGURATION
+const DISPATCH_LOGS_FILE = path.join(__dirname, 'database', 'dispatch_logs.json');
+let dispatchLogsDB = [];
+try {
+  if (fs.existsSync(DISPATCH_LOGS_FILE)) {
+    dispatchLogsDB = JSON.parse(fs.readFileSync(DISPATCH_LOGS_FILE, 'utf8'));
+  }
+} catch (e) { console.error('Erro ao ler dispatch_logs.json:', e); }
+
+function saveDispatchLogs() {
+  try {
+    const dir = path.dirname(DISPATCH_LOGS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DISPATCH_LOGS_FILE, JSON.stringify(dispatchLogsDB, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Erro ao salvar dispatch_logs.json:', err);
+  }
+}
+
 function parseCookies(request) {
   const list = {};
   const rc = request.headers.cookie;
@@ -135,31 +236,55 @@ whatsappClient.on('onMessageSent', (data) => {
   logMessageToSupabase(data);
 });
 
-// Função para quebrar mensagens longas organicamente simulando um humano
+// Função para quebrar mensagens organicamente simulando frases curtas humanas no WhatsApp
 function splitOrganicMessage(text) {
-  let chunks = text.split(/\n\n+/);
-  if (chunks.length === 1) chunks = text.split(/\n/);
-  chunks = chunks.map(c => c.trim()).filter(c => c.length > 0);
-  
-  // Se ainda for um bloco único e muito grande, quebra por frases
-  if (chunks.length === 1 && chunks[0].length > 150) {
-    const sentences = chunks[0].match(/[^.!?]+[.!?]+/g);
+  if (!text) return [];
+  let cleanText = String(text).trim();
+
+  // 1. Divide primeiro por quebras duplas ou simples de linha
+  let rawChunks = cleanText.split(/\n+/);
+  let finalChunks = [];
+
+  for (let chunk of rawChunks) {
+    chunk = chunk.trim();
+    if (!chunk) continue;
+
+    // Se o chunk for curto/médio (até ~120 caracteres), mantém como 1 balão
+    if (chunk.length <= 120) {
+      finalChunks.push(chunk);
+      continue;
+    }
+
+    // Se for mais longo, quebra por pontuação de fim de frase (. ! ?)
+    const sentences = chunk.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g);
     if (sentences && sentences.length > 1) {
-      let merged = [];
       let current = "";
       for (let s of sentences) {
+        s = s.trim();
+        if (!s) continue;
         if ((current.length + s.length) > 100 && current.length > 0) {
-          merged.push(current.trim());
+          finalChunks.push(current.trim());
           current = s;
         } else {
-          current += " " + s;
+          current = current ? (current + " " + s) : s;
         }
       }
-      if (current.trim().length > 0) merged.push(current.trim());
-      chunks = merged;
+      if (current.trim().length > 0) {
+        finalChunks.push(current.trim());
+      }
+    } else {
+      finalChunks.push(chunk);
     }
   }
-  return chunks;
+
+  // Limita a no máximo 3 ou 4 balões para manter a conversa ágil e nunca floodar
+  if (finalChunks.length > 4) {
+    const head = finalChunks.slice(0, 3);
+    const tail = finalChunks.slice(3).join(' ');
+    finalChunks = [...head, tail];
+  }
+
+  return finalChunks.map(c => c.trim()).filter(c => c.length > 0);
 }
 
 // Hook de auto-reply por IA
@@ -175,8 +300,8 @@ whatsappClient.on('onMessage', async (msg) => {
     if (chatMode === 'copilot') return; // Co-piloto não responde automaticamente
 
     const agentKey = aiClient.getAgentForChat(msg.remoteJid);
-    const delayMin = aiConfig.replyDelayMin || 3;
-    const delayMax = aiConfig.replyDelayMax || 7;
+    const delayMin = aiConfig.replyDelayMin || 2;
+    const delayMax = aiConfig.replyDelayMax || 5;
     const delayMs = Math.floor(Math.random() * (delayMax - delayMin + 1) + delayMin) * 1000;
 
     console.log(`🤖 [IA Auto-Reply] Respondendo ${msg.remoteJid} com "${agentKey}" em ${(delayMs/1000).toFixed(1)}s...`);
@@ -192,9 +317,9 @@ whatsappClient.on('onMessage', async (msg) => {
         if (aiRes?.reply) {
           const chunks = splitOrganicMessage(aiRes.reply);
           for (let i = 0; i < chunks.length; i++) {
-            // Pausa orgânica entre balões subsequentes
+            // Pausa orgânica realista entre balões sequenciais humanos (1.2s a 2.5s)
             if (i > 0) {
-              const pauseMs = Math.floor(Math.random() * 2500) + 1500; // 1.5s a 4s
+              const pauseMs = Math.floor(Math.random() * 1300) + 1200;
               await new Promise(r => setTimeout(r, pauseMs));
             }
             
@@ -205,7 +330,7 @@ whatsappClient.on('onMessage', async (msg) => {
               agentIcon: aiRes.agentIcon,
               simulateTyping: true
             });
-            console.log(`🤖 [IA] Enviado balão ${i+1}/${chunks.length} para ${msg.remoteJid}`);
+            console.log(`🤖 [IA] Enviado balão ${i+1}/${chunks.length} para ${msg.remoteJid}: "${chunks[i].substring(0, 40)}..."`);
           }
         }
       } catch (aiErr) {
@@ -232,6 +357,236 @@ const server = http.createServer(async (req, res) => {
   let pathname = parsedUrl.pathname;
 
   try {
+    // ========================================================================
+    // API LISTS (Listas de Envio)
+    // ========================================================================
+    if (pathname === '/api/lists' && req.method === 'GET') {
+      return json(res, listsDB);
+    }
+
+    if (pathname === '/api/lists' && req.method === 'POST') {
+      const payload = await parseBody(req);
+      if (!payload.name) return jsonError(res, 'Nome é obrigatório');
+      const newList = {
+        id: `list_${Date.now()}`,
+        name: payload.name,
+        description: payload.description || '',
+        color: payload.color || '#3b82f6',
+        contacts: [],
+        createdAt: new Date().toISOString()
+      };
+      listsDB.push(newList);
+      saveLists();
+      return json(res, newList);
+    }
+
+    if (pathname.startsWith('/api/lists/') && req.method === 'PUT') {
+      const listId = pathname.split('/')[3];
+      const idx = listsDB.findIndex(l => l.id === listId);
+      if (idx === -1) return jsonError(res, 'Lista não encontrada', 404);
+      const payload = await parseBody(req);
+      listsDB[idx] = { ...listsDB[idx], ...payload };
+      saveLists();
+      return json(res, listsDB[idx]);
+    }
+
+    if (pathname.startsWith('/api/lists/') && pathname.endsWith('/contacts') && req.method === 'POST') {
+      const listId = pathname.split('/')[3];
+      const idx = listsDB.findIndex(l => l.id === listId);
+      if (idx === -1) return jsonError(res, 'Lista não encontrada', 404);
+      const payload = await parseBody(req);
+      const toAdd = payload.contacts || [];
+      // Avoid duplicates
+      const existing = new Set(listsDB[idx].contacts.map(c => c.phone || c.id));
+      toAdd.forEach(c => { if (!existing.has(c.phone || c.id)) listsDB[idx].contacts.push(c); });
+      saveLists();
+      return json(res, { success: true, total: listsDB[idx].contacts.length });
+    }
+
+    if (pathname.startsWith('/api/lists/') && pathname.endsWith('/contacts') && req.method === 'DELETE') {
+      const listId = pathname.split('/')[3];
+      const idx = listsDB.findIndex(l => l.id === listId);
+      if (idx === -1) return jsonError(res, 'Lista não encontrada', 404);
+      const payload = await parseBody(req);
+      const toRemove = new Set(payload.phones || []);
+      listsDB[idx].contacts = listsDB[idx].contacts.filter(c => !toRemove.has(c.phone));
+      saveLists();
+      return json(res, { success: true });
+    }
+
+    if (pathname.startsWith('/api/lists/') && req.method === 'DELETE') {
+      const listId = pathname.split('/')[3];
+      listsDB = listsDB.filter(l => l.id !== listId);
+      saveLists();
+      return json(res, { success: true });
+    }
+
+    // ========================================================================
+    // API TEMPLATES (Templates de Mensagens)
+    // ========================================================================
+    if (pathname === '/api/templates' && req.method === 'GET') {
+      return json(res, templatesDB);
+    }
+
+    if (pathname === '/api/templates' && req.method === 'POST') {
+      const payload = await parseBody(req);
+      if (!payload.name || !payload.text) return jsonError(res, 'Nome e conteúdo do template são obrigatórios');
+      const newTmpl = {
+        id: `tmpl_${Date.now()}`,
+        name: payload.name,
+        category: payload.category || 'Geral',
+        text: payload.text,
+        createdAt: new Date().toISOString()
+      };
+      templatesDB.push(newTmpl);
+      saveTemplates();
+      return json(res, newTmpl);
+    }
+
+    if (pathname.startsWith('/api/templates/') && req.method === 'PUT') {
+      const tmplId = pathname.split('/')[3];
+      const idx = templatesDB.findIndex(t => t.id === tmplId);
+      if (idx === -1) return jsonError(res, 'Template não encontrado', 404);
+      const payload = await parseBody(req);
+      templatesDB[idx] = { ...templatesDB[idx], ...payload };
+      saveTemplates();
+      return json(res, templatesDB[idx]);
+    }
+
+    if (pathname.startsWith('/api/templates/') && req.method === 'DELETE') {
+      const tmplId = pathname.split('/')[3];
+      templatesDB = templatesDB.filter(t => t.id !== tmplId);
+      saveTemplates();
+      return json(res, { success: true });
+    }
+
+    // ========================================================================
+    // API DISPATCH LOGS
+    // ========================================================================
+    if (pathname === '/api/dispatch-logs' && req.method === 'GET') {
+      return json(res, dispatchLogsDB);
+    }
+
+    if (pathname === '/api/dispatch-logs' && req.method === 'POST') {
+      const body = await parseBody(req);
+      if (Array.isArray(body)) {
+        dispatchLogsDB.unshift(...body);
+      } else if (body && typeof body === 'object') {
+        dispatchLogsDB.unshift({
+          id: body.id || `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          timestamp: body.timestamp || new Date().toISOString(),
+          timeFormatted: body.timeFormatted || new Date().toLocaleTimeString('pt-BR') + ' ' + new Date().toLocaleDateString('pt-BR'),
+          contactName: body.contactName || 'Desconhecido',
+          phone: body.phone || '',
+          message: body.message || body.text || '',
+          media: body.media || null,
+          status: body.status || 'success', // 'success' | 'error'
+          errorReason: body.errorReason || null,
+          instanceName: body.instanceName || 'WhatsApp Linha 1',
+          campaignName: body.campaignName || 'Disparo Direto'
+        });
+      }
+      if (dispatchLogsDB.length > 2000) {
+        dispatchLogsDB = dispatchLogsDB.slice(0, 2000);
+      }
+      saveDispatchLogs();
+      return json(res, { success: true, count: dispatchLogsDB.length });
+    }
+
+    if (pathname === '/api/dispatch-logs' && req.method === 'DELETE') {
+      dispatchLogsDB = [];
+      saveDispatchLogs();
+      return json(res, { success: true, count: 0 });
+    }
+
+    // ========================================================================
+    // API CONTACTS (proxy para Supabase)
+    // ========================================================================
+    if (pathname === '/api/contacts' && req.method === 'GET') {
+      try {
+        let crmData = [];
+        let profData = [];
+
+        try {
+          const { data } = await supabase.from('crm_contacts').select('*').limit(2000);
+          crmData = data || [];
+        } catch (e) {}
+
+        try {
+          const { data } = await supabase.from('profiles').select('*').limit(2000);
+          profData = data || [];
+        } catch (e) {}
+
+        const mergedMap = new Map();
+
+        crmData.forEach(c => {
+          const rawPhone = c.whatsapp || c.phone || c.telefone || '';
+          const digits = rawPhone.replace(/\D/g, '');
+          const keyStr = digits.length >= 8 ? digits.slice(-10) : c.id;
+          mergedMap.set(keyStr, { ...c });
+        });
+
+        profData.forEach(p => {
+          const rawPhone = p.whatsapp || p.phone || p.telefone || '';
+          const digits = rawPhone.replace(/\D/g, '');
+          const keyStr = digits.length >= 8 ? digits.slice(-10) : p.id;
+          const existing = mergedMap.get(keyStr) || {};
+
+          const name = (p.name || p.full_name || existing.name || existing.full_name || existing.nome || '').trim();
+          const email = (p.email && p.email.trim()) ? p.email.trim() : (existing.email || '');
+          const profession = (p.profession && p.profession.trim() && p.profession !== 'Não informado') ? p.profession.trim() : (existing.profession || existing.profissao || 'Não informado');
+          const region = (p.region && p.region.trim() && p.region !== 'Não informado') ? p.region.trim() : (existing.region || existing.regiao || 'Não informado');
+          const phone = (p.whatsapp && p.whatsapp.trim()) ? p.whatsapp.trim() : (p.phone && p.phone.trim() ? p.phone.trim() : (existing.whatsapp || existing.phone || existing.telefone || ''));
+          const rawStatus = existing.contact_status || p.contact_status || existing.status || 'Vermelho';
+          const status = (rawStatus === 'Novo' || rawStatus === 'Contatado' || !['Vermelho', 'Amarelo', 'Verde'].includes(rawStatus)) ? 'Vermelho' : rawStatus;
+
+          mergedMap.set(keyStr, {
+            ...existing,
+            ...p,
+            id: existing.id || p.id,
+            name,
+            nome: name,
+            email,
+            profession,
+            profissao: profession,
+            region,
+            regiao: region,
+            whatsapp: phone,
+            phone,
+            telefone: phone,
+            status,
+            contact_status: status
+          });
+        });
+
+        const contacts = Array.from(mergedMap.values()).map(c => {
+          const name = (c.name || c.nome || c.full_name || '').trim();
+          const phone = c.whatsapp || c.phone || c.telefone || '';
+          const rawStatus = c.contact_status || c.status || 'Vermelho';
+          const status = (rawStatus === 'Novo' || rawStatus === 'Contatado' || !['Vermelho', 'Amarelo', 'Verde'].includes(rawStatus)) ? 'Vermelho' : rawStatus;
+
+          return {
+            id: c.id,
+            name,
+            nome: name,
+            phone,
+            whatsapp: phone,
+            telefone: phone,
+            email: c.email || '',
+            profession: (c.profession && c.profession !== 'Não informado') ? c.profession : (c.profissao || 'Não informado'),
+            region: (c.region && c.region !== 'Não informado') ? c.region : (c.regiao || 'Não informado'),
+            status,
+            tags: c.tags || [],
+            source: c.source || 'Supabase'
+          };
+        });
+
+        return json(res, { success: true, contacts });
+      } catch (err) {
+        return jsonError(res, 'Erro ao buscar contatos: ' + err.message);
+      }
+    }
+
     // ========================================================================
     // API AUTH
     // ========================================================================
@@ -388,9 +743,12 @@ const server = http.createServer(async (req, res) => {
         return jsonError(res, '"phone", "base64Data" e "mimeType" são obrigatórios.');
       }
 
-      // Check max size (limit payload size artificially if needed, though parseBody handles it)
       const result = await whatsappClient.sendMediaMessage(phone, base64Data, mimeType, caption, {
         instanceId: instanceId,
+        fileName: payload.fileName,
+        contactName: payload.contactName,
+        contactId: payload.contactId,
+        campaignId: payload.campaignId,
         simulateTyping: payload.simulateTyping
       });
       return json(res, result);
@@ -454,7 +812,7 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/ai/agents' && req.method === 'POST') {
       const payload = await parseBody(req);
-      const { id, name, icon, description, promptPrefix, defaultMode, theme, workspaceSlug } = payload;
+      const { id, name, icon, description, promptPrefix, defaultMode, theme, workspaceSlug, structuredFields } = payload;
       if (!id || !name) return jsonError(res, 'ID e Nome são obrigatórios');
 
       const config = aiClient.getConfig();
@@ -468,8 +826,9 @@ const server = http.createServer(async (req, res) => {
         fallbackWorkspace: 'meu-workspace',
         workspaceSlug: workspaceSlug || id,
         promptPrefix: promptPrefix || '',
-        defaultMode: defaultMode || 'copilot',
-        theme: theme || 'blue'
+        defaultMode: defaultMode || 'autonomous',
+        theme: theme || 'blue',
+        structuredFields: structuredFields || null
       };
 
       aiClient.updateConfig({ customAgents });

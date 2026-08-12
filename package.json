@@ -19,6 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",
+    "@tabler/icons": "^3.46.0",
     "@whiskeysockets/baileys": "^7.0.0-rc14",
     "dotenv": "^16.5.0",
     "pino": "^10.3.1",

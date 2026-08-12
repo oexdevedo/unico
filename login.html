@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>Login - Unico</title>
+  <meta name="description" content="Acesse o painel do Unico CRM — Automação e Inteligência Artificial para sua equipe.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="img/logo.png">
   <link rel="stylesheet" href="css/design-system.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+    /* ── Base ────────────────────────────────────── */
     body {
       margin: 0;
       padding: 0;
@@ -16,24 +18,30 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      background: #111418; /* Dark background matching the image edges */
+      background: #0f1114;
       font-family: 'Inter', sans-serif;
+      overflow: hidden;
     }
 
+    /* ── Split Wrapper ─────────────────────────────── */
     .split-wrapper {
       display: flex;
-      width: 90vw;
+      width: 92vw;
       max-width: 1200px;
-      height: 85vh;
-      max-height: 800px;
-      background: #ffffff;
-      border-radius: 24px;
+      height: 88vh;
+      max-height: 820px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 28px;
       overflow: hidden;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      box-shadow:
+        0 25px 60px rgba(0,0,0,0.45),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.06);
     }
 
+    /* ── Left Panel — Hero Image ───────────────────── */
     .split-left {
-      flex: 1;
+      flex: 1.1;
       background-image: url('img/login-bg.jpg');
       background-size: cover;
       background-position: center;
@@ -41,24 +49,45 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 2rem;
+      padding: 2.5rem;
       color: #fff;
     }
 
     .split-left::before {
       content: '';
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%);
+      inset: 0;
+      background: linear-gradient(
+        165deg,
+        rgba(0,0,0,0.15) 0%,
+        rgba(0,0,0,0.55) 60%,
+        rgba(0,0,0,0.75) 100%
+      );
       pointer-events: none;
     }
 
     .left-header {
       position: relative;
       z-index: 1;
-      font-weight: 600;
-      font-size: 1.2rem;
-      letter-spacing: -0.5px;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.3px;
+      opacity: 0.9;
+    }
+
+    .left-testimonial {
+      position: relative;
+      z-index: 1;
+      max-width: 380px;
+    }
+
+    .left-testimonial blockquote {
+      font-size: 1.25rem;
+      font-weight: 500;
+      line-height: 1.55;
+      letter-spacing: -0.3px;
+      margin: 0 0 1.5rem 0;
+      color: rgba(255,255,255,0.92);
     }
 
     .left-footer {
@@ -66,241 +95,367 @@
       z-index: 1;
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.85rem;
     }
 
     .left-footer img {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.25);
+      object-fit: cover;
     }
-    
+
     .left-footer .user-info {
       display: flex;
       flex-direction: column;
     }
 
     .left-footer .user-info strong {
-      font-size: 1.1rem;
+      font-size: 0.95rem;
       font-weight: 600;
     }
 
     .left-footer .user-info span {
-      font-size: 0.85rem;
-      color: rgba(255,255,255,0.7);
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.6);
     }
 
+    /* ── Right Panel — Form Area ───────────────────── */
     .split-right {
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 3rem 4rem;
+      padding: 3rem 3.5rem;
       background: #ffffff;
       color: #111;
       position: relative;
       overflow-y: auto;
     }
 
+    /* ── Brand Logo ─────────────────────────────── */
     .brand-logo {
-      font-size: 1.5rem;
+      font-size: 1.35rem;
       font-weight: 800;
-      letter-spacing: -1px;
+      letter-spacing: -0.8px;
       color: #111;
-      margin-bottom: 2rem;
+      margin-bottom: 0;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
 
     .brand-logo img {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
     }
 
+    /* ── Auth View (each card) ─────────────────── */
     .auth-view {
-      display: flex;
+      display: none;
       flex-direction: column;
       flex: 1;
       justify-content: center;
-      max-width: 400px;
+      max-width: 380px;
       margin: 0 auto;
       width: 100%;
     }
 
+    .auth-view.active {
+      display: flex;
+    }
+
+    /* Override glass-card for the login context — subtle on white bg */
+    .split-right .glass-card {
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    /* ── Titles ─────────────────────────────── */
     .auth-title {
-      font-size: 3rem;
+      font-size: 2.2rem;
       font-weight: 800;
-      letter-spacing: -1.5px;
-      margin: 0 0 0.5rem 0;
-      text-align: center;
+      letter-spacing: -1.2px;
+      margin: 0 0 0.35rem 0;
+      color: #111;
     }
 
     .auth-subtitle {
-      text-align: center;
-      color: #666;
-      font-size: 1rem;
-      margin-bottom: 3rem;
+      color: #888;
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+      line-height: 1.5;
     }
 
+    /* ── Form Elements ──────────────────────── */
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
+      position: relative;
     }
 
     .form-group label {
-      display: none; /* Clean layout uses placeholders mainly, but let's keep it visually hidden or styled minimal */
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.01em;
     }
 
     .form-input {
       width: 100%;
-      padding: 1rem 1.25rem;
-      border: 1px solid #e5e7eb;
+      padding: 0.85rem 1rem;
+      border: 1.5px solid #e5e7eb;
       border-radius: 12px;
-      font-size: 1rem;
-      background: #fff;
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      background: #fafbfc;
       color: #111;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .form-input::placeholder {
+      color: #b0b5bd;
     }
 
     .form-input:focus {
       outline: none;
-      border-color: #ef4444;
-      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+      border-color: #111;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
     }
 
-    .forgot-link {
-      display: block;
-      text-align: right;
-      font-size: 0.85rem;
-      color: #ef4444;
-      text-decoration: none;
-      margin-top: -0.5rem;
-      margin-bottom: 2rem;
-      cursor: pointer;
+    /* ── Password Toggle ──────────────────── */
+    .password-wrapper {
+      position: relative;
     }
-    
+
+    .password-wrapper .form-input {
+      padding-right: 3rem;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #aaa;
+      font-size: 1.1rem;
+      padding: 4px;
+      transition: color 0.15s;
+    }
+
+    .password-toggle:hover {
+      color: #555;
+    }
+
+    /* ── Links ──────────────────────── */
+    .forgot-link {
+      display: inline-block;
+      font-size: 0.82rem;
+      color: #888;
+      text-decoration: none;
+      margin-top: -0.3rem;
+      margin-bottom: 1.5rem;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+
     .forgot-link:hover {
+      color: #111;
       text-decoration: underline;
     }
 
-    .divider {
-      display: flex;
-      align-items: center;
-      text-align: center;
-      margin: 2rem 0;
-      color: #9ca3af;
-      font-size: 0.85rem;
-    }
-
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    
-    .divider::before { margin-right: 1rem; }
-    .divider::after { margin-left: 1rem; }
-
+    /* ── Buttons ──────────────────────── */
     .btn-main {
       width: 100%;
-      padding: 1rem;
-      background: #ef4444;
+      padding: 0.9rem;
+      background: #111;
       color: white;
       border: none;
       border-radius: 12px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
+      font-family: 'Inter', sans-serif;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
     }
 
     .btn-main:hover {
-      background: #dc2626;
+      background: #333;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
-    .btn-outline {
-      width: 100%;
-      padding: 1rem;
-      background: #fff;
-      color: #111;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
+    .btn-main:active {
+      transform: translateY(0);
+    }
+
+    .btn-main:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Loading spinner inside button */
+    .btn-main .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin: 0 auto;
+    }
+
+    .btn-main.loading .btn-text { display: none; }
+    .btn-main.loading .spinner { display: inline-block; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── Back Button (for sub-views) ──────── */
+    .btn-back {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      transition: all 0.2s;
+      gap: 0.4rem;
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 0.85rem;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 1.5rem;
+      transition: color 0.15s;
     }
 
-    .btn-outline:hover {
-      background: #f9fafb;
-      border-color: #d1d5db;
+    .btn-back:hover {
+      color: #111;
     }
 
+    .btn-back svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ── Auth Footer ──────────────────────── */
     .auth-footer {
       text-align: center;
       margin-top: 2rem;
-      font-size: 0.9rem;
-      color: #666;
+      font-size: 0.88rem;
+      color: #888;
     }
 
     .auth-footer a {
-      color: #ef4444;
+      color: #111;
       text-decoration: none;
       font-weight: 600;
       cursor: pointer;
+      transition: opacity 0.15s;
     }
 
     .auth-footer a:hover {
+      opacity: 0.7;
       text-decoration: underline;
     }
 
+    /* ── Messages ──────────────────────── */
     .error-msg {
-      color: #ef4444;
-      font-size: 0.9rem;
+      color: #dc2626;
+      font-size: 0.85rem;
       margin-bottom: 1rem;
       text-align: center;
       display: none;
       background: #fef2f2;
-      padding: 0.75rem;
-      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      border-radius: 10px;
       border: 1px solid #fecaca;
     }
 
     .success-msg {
-      color: #10b981;
-      font-size: 0.9rem;
+      color: #059669;
+      font-size: 0.85rem;
       margin-bottom: 1rem;
       text-align: center;
       display: none;
       background: #ecfdf5;
-      padding: 0.75rem;
-      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      border-radius: 10px;
       border: 1px solid #a7f3d0;
     }
 
-    /* Responsive */
+    /* ── Step Indicator ─────────────────── */
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e0e0e0;
+      transition: all 0.25s ease;
+    }
+
+    .step-dot.active {
+      width: 24px;
+      border-radius: 4px;
+      background: #111;
+    }
+
+    /* ── Responsive ──────────────────────── */
     @media (max-width: 900px) {
       .split-left { display: none; }
-      .split-right { padding: 2rem; }
-      .split-wrapper { width: 100vw; height: 100vh; max-height: none; border-radius: 0; }
+      .split-right { padding: 2rem 1.5rem; }
+      .split-wrapper {
+        width: 100vw;
+        height: 100vh;
+        max-height: none;
+        border-radius: 0;
+        border: none;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .auth-title { font-size: 1.8rem; }
+      .split-right { padding: 1.5rem 1.25rem; }
     }
   </style>
 </head>
 <body>
 
   <div class="split-wrapper">
-    <!-- LEFT SIDE: IMAGE -->
+    <!-- LEFT SIDE: IMAGE + SOCIAL PROOF -->
     <div class="split-left">
       <div class="left-header">Unico Workspace</div>
-      <div class="left-footer">
-        <img src="img/logo.png" alt="Unico">
-        <div class="user-info">
-          <strong>CRM Multi-Agentes</strong>
-          <span>Automação e Inteligência Artificial</span>
+
+      <div class="left-testimonial">
+        <blockquote>
+          "O Unico transformou a forma como gerenciamos nossos clientes. Automação inteligente que realmente funciona."
+        </blockquote>
+        <div class="left-footer">
+          <img src="img/logo.png" alt="Unico">
+          <div class="user-info">
+            <strong>CRM Multi-Agentes</strong>
+            <span>Automação e Inteligência Artificial</span>
+          </div>
         </div>
       </div>
     </div>
@@ -312,23 +467,41 @@
         UNICO
       </div>
 
-      <!-- VIEW: LOGIN -->
-      <div class="auth-view" id="viewLogin">
-        <h1 class="auth-title">Bem-vindo</h1>
-        <p class="auth-subtitle">Acesse o painel do Unico CRM</p>
+      <!-- ═══════════════════════════════════════ -->
+      <!-- VIEW: LOGIN                             -->
+      <!-- ═══════════════════════════════════════ -->
+      <div class="auth-view view-container glass-card active" id="viewLogin" data-view="login">
+        <h1 class="auth-title">Bem-vindo de volta</h1>
+        <p class="auth-subtitle">Entre com suas credenciais para acessar o painel</p>
 
         <div id="loginError" class="error-msg"></div>
+        <div id="loginSuccess" class="success-msg"></div>
 
-        <form id="formLogin" onsubmit="handleLogin(event)">
+        <form id="formLogin" onsubmit="handleLogin(event)" autocomplete="on">
           <div class="form-group">
-            <input type="email" class="form-input" id="loginEmail" required placeholder="E-mail">
+            <label for="loginEmail">E-mail</label>
+            <input type="email" class="form-input" id="loginEmail" required
+                   placeholder="seu@email.com" autocomplete="email">
           </div>
-          <div class="form-group" style="margin-bottom: 0.5rem;">
-            <input type="password" class="form-input" id="loginPassword" required placeholder="Senha">
+          <div class="form-group">
+            <label for="loginPassword">Senha</label>
+            <div class="password-wrapper">
+              <input type="password" class="form-input" id="loginPassword" required
+                     placeholder="••••••••" autocomplete="current-password">
+              <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Mostrar senha">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
           </div>
           <a class="forgot-link" onclick="switchView('viewForgot')">Esqueceu a senha?</a>
-          
-          <button type="submit" class="btn-main" id="btnLogin">Entrar</button>
+
+          <button type="submit" class="btn-main" id="btnLogin">
+            <span class="btn-text">Entrar</span>
+            <span class="spinner"></span>
+          </button>
         </form>
 
         <div class="auth-footer">
@@ -336,25 +509,56 @@
         </div>
       </div>
 
-      <!-- VIEW: REGISTER -->
-      <div class="auth-view" id="viewRegister" style="display: none;">
-        <h1 class="auth-title" style="font-size:2.5rem">Criar Conta</h1>
-        <p class="auth-subtitle">Junte-se à equipe Ex Devedor</p>
+      <!-- ═══════════════════════════════════════ -->
+      <!-- VIEW: REGISTER                          -->
+      <!-- ═══════════════════════════════════════ -->
+      <div class="auth-view view-container glass-card" id="viewRegister" data-view="register">
+        <button class="btn-back" onclick="switchView('viewLogin')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Voltar
+        </button>
+
+        <h1 class="auth-title">Criar conta</h1>
+        <p class="auth-subtitle">Junte-se à equipe e comece a usar o CRM</p>
+
+        <!-- Step indicator -->
+        <div class="step-indicator">
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+        </div>
 
         <div id="registerError" class="error-msg"></div>
 
-        <form id="formRegister" onsubmit="handleRegister(event)">
+        <form id="formRegister" onsubmit="handleRegister(event)" autocomplete="on">
           <div class="form-group">
-            <input type="email" class="form-input" id="regEmail" required placeholder="E-mail (@exdevedor.com.br)">
+            <label for="regEmail">E-mail corporativo</label>
+            <input type="email" class="form-input" id="regEmail" required
+                   placeholder="nome@exdevedor.com.br" autocomplete="email">
           </div>
           <div class="form-group">
-            <input type="text" class="form-input" id="regPhone" required placeholder="WhatsApp (Ex: 5511999999999)">
+            <label for="regPhone">WhatsApp</label>
+            <input type="tel" class="form-input" id="regPhone" required
+                   placeholder="55 11 99999-9999" autocomplete="tel">
           </div>
           <div class="form-group">
-            <input type="password" class="form-input" id="regPassword" required placeholder="Crie uma senha forte">
+            <label for="regPassword">Crie uma senha</label>
+            <div class="password-wrapper">
+              <input type="password" class="form-input" id="regPassword" required
+                     placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+              <button type="button" class="password-toggle" onclick="togglePassword('regPassword', this)" aria-label="Mostrar senha">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
           </div>
-          
-          <button type="submit" class="btn-main" id="btnRegister">Cadastrar</button>
+
+          <button type="submit" class="btn-main" id="btnRegister">
+            <span class="btn-text">Cadastrar</span>
+            <span class="spinner"></span>
+          </button>
         </form>
 
         <div class="auth-footer">
@@ -362,49 +566,85 @@
         </div>
       </div>
 
-      <!-- VIEW: FORGOT PASSWORD -->
-      <div class="auth-view" id="viewForgot" style="display: none;">
-        <h1 class="auth-title" style="font-size:2.5rem">Recuperar</h1>
-        <p class="auth-subtitle">Confirme seu E-mail e WhatsApp para recuperar</p>
+      <!-- ═══════════════════════════════════════ -->
+      <!-- VIEW: FORGOT PASSWORD                   -->
+      <!-- ═══════════════════════════════════════ -->
+      <div class="auth-view view-container glass-card" id="viewForgot" data-view="forgot">
+        <button class="btn-back" onclick="switchView('viewLogin')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Voltar ao login
+        </button>
+
+        <h1 class="auth-title">Recuperar acesso</h1>
+        <p class="auth-subtitle">Confirme seus dados cadastrados para redefinir a senha</p>
 
         <div id="forgotError" class="error-msg"></div>
 
         <form id="formForgot" onsubmit="handleForgot(event)">
           <div class="form-group">
-            <input type="email" class="form-input" id="forgotEmail" required placeholder="Seu E-mail Cadastrado">
+            <label for="forgotEmail">E-mail cadastrado</label>
+            <input type="email" class="form-input" id="forgotEmail" required
+                   placeholder="seu@email.com" autocomplete="email">
           </div>
           <div class="form-group">
-            <input type="text" class="form-input" id="forgotPhone" required placeholder="Seu WhatsApp (Ex: 5511999999999)">
+            <label for="forgotPhone">WhatsApp cadastrado</label>
+            <input type="tel" class="form-input" id="forgotPhone" required
+                   placeholder="55 11 99999-9999" autocomplete="tel">
           </div>
-          
-          <button type="submit" class="btn-main" id="btnForgot">Verificar Dados</button>
+
+          <button type="submit" class="btn-main" id="btnForgot">
+            <span class="btn-text">Verificar dados</span>
+            <span class="spinner"></span>
+          </button>
         </form>
 
         <div class="auth-footer">
-          Lembrou a senha? <a onclick="switchView('viewLogin')">Voltar</a>
+          Lembrou a senha? <a onclick="switchView('viewLogin')">Voltar ao login</a>
         </div>
       </div>
 
-      <!-- VIEW: RESET PASSWORD -->
-      <div class="auth-view" id="viewReset" style="display: none;">
-        <h1 class="auth-title" style="font-size:2.5rem">Nova Senha</h1>
-        <p class="auth-subtitle">Crie uma nova senha de acesso</p>
+      <!-- ═══════════════════════════════════════ -->
+      <!-- VIEW: RESET PASSWORD                    -->
+      <!-- ═══════════════════════════════════════ -->
+      <div class="auth-view view-container glass-card" id="viewReset" data-view="reset">
+        <button class="btn-back" onclick="switchView('viewForgot')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Voltar
+        </button>
+
+        <h1 class="auth-title">Nova senha</h1>
+        <p class="auth-subtitle">Escolha uma senha segura para sua conta</p>
 
         <div id="resetError" class="error-msg"></div>
         <div id="resetSuccess" class="success-msg"></div>
 
         <form id="formReset" onsubmit="handleReset(event)">
           <div class="form-group">
-            <input type="email" class="form-input" id="resetEmail" required readonly style="background:#f3f4f6; color:#9ca3af; cursor:not-allowed;">
+            <label for="resetEmail">E-mail</label>
+            <input type="email" class="form-input" id="resetEmail" required readonly
+                   style="background:#f5f5f5; color:#999; cursor:not-allowed;">
           </div>
           <!-- Hidden token since we verified via phone -->
           <input type="hidden" id="resetToken">
-          
+
           <div class="form-group">
-            <input type="password" class="form-input" id="resetPassword" required placeholder="Sua Nova Senha">
+            <label for="resetPassword">Nova senha</label>
+            <div class="password-wrapper">
+              <input type="password" class="form-input" id="resetPassword" required
+                     placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+              <button type="button" class="password-toggle" onclick="togglePassword('resetPassword', this)" aria-label="Mostrar senha">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
           </div>
-          
-          <button type="submit" class="btn-main" id="btnReset">Confirmar Nova Senha</button>
+
+          <button type="submit" class="btn-main" id="btnReset">
+            <span class="btn-text">Confirmar nova senha</span>
+            <span class="spinner"></span>
+          </button>
         </form>
       </div>
 

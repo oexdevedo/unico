@@ -15,13 +15,24 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
+const WHATSAPP_HUMAN_DIRECTIVE = `[DIRETRIZ DE LINGUAGEM WHATSAPP — EXTREMAMENTE IMPORTANTE]:
+Você é uma pessoa real conversando informalmente pelo WhatsApp. NUNCA fale como robô, inteligência artificial, manual ou assistente corporativo.
+
+REGRAS OBRIGATÓRIAS:
+1. FRASES CURTAS E NATURAIS: Escreva em frases curtas e ágeis, exatamente como humanos conversam no WhatsApp.
+2. NUNCA ENVIE TEXTÕES: Jamais envie parágrafos longos, blocos densos ou listas de tópicos. Responda em no máximo 1 a 3 frases curtas.
+3. QUEBRE EM BALÕES SEPARADOS: Use quebra de linha dupla (\\n\\n) entre ideias ou frases diferentes para que sejam enviadas como mensagens individuais no chat.
+4. DIÁLOGO DINÂMICO (PING-PONG): Responda apenas o essencial de forma acolhedora e SEMPRE termine com uma pergunta curta e natural para continuar a conversa.
+5. LINGUAGEM BRASILEIRA NATURAL: Use tom empático, amigável e descontraído (ex: "opa, tudo bem?", "então...", "olha só", "me conta:", "beleza?", "show", "tranquilo", "vamos ver isso juntos").
+6. PROIBIDO saudações formais antiquadas (ex: "Prezado", "Como posso ajudá-lo hoje?", "Espero que este e-mail...").`;
+
 const DEFAULT_CONFIG = {
   baseUrl: process.env.ANYTHINGLLM_BASE_URL || 'https://area-51-anything-llm.mypaeg.easypanel.host',
   apiKey: process.env.ANYTHINGLLM_API_KEY || 'BGJ66NS-Q2N4TJ9-GQ7HVR0-NX0E70G',
   autoReplyEnabled: false,
   activeAgent: 'tira-duvidas',
-  replyDelayMin: 4,
-  replyDelayMax: 8,
+  replyDelayMin: 3,
+  replyDelayMax: 6,
   disabledChats: [],
   perChatAgents: {},
   perChatModes: {},  // JID → 'autonomous' | 'copilot' | 'off'
@@ -35,9 +46,9 @@ const DEFAULT_CONFIG = {
       id: 'tira-duvidas',
       name: 'Tira Dúvidas',
       icon: '🧠',
-      description: 'Especialista em esclarecer dúvidas sobre dívidas, organização financeira e como funciona a mentoria.',
+      description: 'Especialista em tirar dúvidas de finanças e mentoria em frases curtas e acolhedoras.',
       fallbackWorkspace: 'meu-workspace',
-      promptPrefix: 'Instrução do Agente Tira Dúvidas: Responda como o especialista do Raio X Financeiro, tirando as dúvidas do contato de forma clara, acolhedora, objetiva e humanizada para WhatsApp.',
+      promptPrefix: 'Você é o especialista do Raio X Financeiro no WhatsApp. Converse com calma, empatia e clareza, em frases curtas e diretas. Entenda o que a pessoa precisa e faça perguntas simples para ajudar.',
       defaultMode: 'autonomous',
       theme: 'blue'
     },
@@ -45,9 +56,9 @@ const DEFAULT_CONFIG = {
       id: 'vendedor',
       name: 'Vendedor',
       icon: '💼',
-      description: 'Focado em conversão, quebra de objeções, valor da mentoria e fechamento de vendas.',
+      description: 'Consultor de vendas do Raio X, focado em conversação leve e fechamento consultivo.',
       fallbackWorkspace: 'meu-workspace',
-      promptPrefix: 'Instrução do Agente Vendedor: Responda de forma persuasiva, destacando os benefícios do Raio X Financeiro, quebrando objeções de forma amigável e incentivando o contato a dar o próximo passo.',
+      promptPrefix: 'Você é o consultor do Raio X Financeiro no WhatsApp. Converse de forma leve, próxima e amigável. Mostre os benefícios da mentoria em poucas palavras e faça perguntas curtas para avançar a conversa.',
       defaultMode: 'autonomous',
       theme: 'yellow'
     },
@@ -55,9 +66,9 @@ const DEFAULT_CONFIG = {
       id: 'auxiliar',
       name: 'Auxiliar',
       icon: '🤝',
-      description: 'Suporte receptivo para triagem, coleta de dados e direcionamento inicial.',
+      description: 'Suporte rápido e acolhedor para triagem e direcionamento.',
       fallbackWorkspace: 'meu-workspace',
-      promptPrefix: 'Instrução do Agente Auxiliar: Responda de forma educada, prestativa e organizada, auxiliando o contato no que for necessário.',
+      promptPrefix: 'Você é o suporte do Raio X Financeiro no WhatsApp. Seja muito simpático, rápido e direto ao ponto em frases curtas, orientando a pessoa sem enrolação.',
       defaultMode: 'copilot',
       theme: 'green'
     }
@@ -248,6 +259,10 @@ function formatWhatsAppText(rawText) {
   if (text.startsWith('"') && text.endsWith('"') && text.length > 2) {
     text = text.slice(1, -1).trim();
   }
+  // Remove markdown headers like ### or ##
+  text = text.replace(/^#{1,6}\s+/gm, '');
+  // Remove robotic bullet points if at line start to make natural
+  text = text.replace(/^[\*\-]\s+/gm, '');
   text = text.replace(/\n{3,}/g, '\n\n');
   return text;
 }
@@ -279,15 +294,15 @@ async function askAgent(agentKey, userMessage, conversationHistory = []) {
         const role = m.fromMe ? 'Atendente / Você' : (m.name || 'Contato');
         return `[${role}]: ${m.text}`;
       });
-      historyBlock = `\n\n--- HISTÓRICO RECENTE ---\n${lines.join('\n')}\n-------------------------\n\n`;
+      historyBlock = `\n\n--- HISTÓRICO RECENTE DA CONVERSA ---\n${lines.join('\n')}\n------------------------------------\n\n`;
     }
   }
 
   // Contexto .md
   const contextBlock = readContextContent(agentKey);
-  const contextSection = contextBlock ? `\n\n--- DOCUMENTOS DE CONTEXTO ---${contextBlock}--- FIM CONTEXTO ---\n\n` : '';
+  const contextSection = contextBlock ? `\n\n--- BASE DE CONHECIMENTO (${agentKey}) ---${contextBlock}--- FIM BASE ---\n\n` : '';
 
-  const prompt = `${agent.promptPrefix}${contextSection}${historyBlock}Última mensagem do contato: "${userMessage}"`;
+  const prompt = `${WHATSAPP_HUMAN_DIRECTIVE}\n\n[INSTRUÇÃO ESPECÍFICA DO SEU PAPEL]:\n${agent.promptPrefix}${contextSection}${historyBlock}Última mensagem enviada pelo contato: "${userMessage}"\n\nResponda agora ao contato em 1 a 3 frases curtas e humanizadas pelo WhatsApp (sem formalidades, sem textão):`;
 
   try {
     const url = `${baseUrl.replace(/\/$/, '')}/api/v1/workspace/${encodeURIComponent(workspaceSlug)}/chat`;

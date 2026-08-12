@@ -1,0 +1,33 @@
+[
+  {
+    "id": "tmpl-1",
+    "name": "Boas-vindas ao Raio X Financeiro",
+    "category": "Boas-Vindas",
+    "text": "{Olá|Oi} {primeiro_nome}! {Tudo bem?|Como vai?}\n\n{saudacao}! Vi que você se cadastrou no *Raio X Financeiro* da Ex Devedor. 🚀\n\nEstamos preparando uma análise personalizada para te ajudar a organizar suas receitas e eliminar dívidas de forma inteligente.\n\nVocê já conseguiu preencher todos os seus dados no diagnóstico?"
+  },
+  {
+    "id": "tmpl-2",
+    "name": "Diagnóstico Financeiro Pronto",
+    "category": "Diagnóstico",
+    "text": "{saudacao}, {primeiro_nome}! 👋\n\nAqui é da equipe de consultoria do *Raio X Financeiro*.\n\nNotamos que você atua na área de *{profissao}* em *{regiao}*. Temos estratégias específicas para o seu perfil financeiro que podem acelerar a sua recuperação e multiplicar seu saldo positivo.\n\nGostaria de receber uma análise gratuita dos seus pontos de melhoria?"
+  },
+  {
+    "id": "tmpl-3",
+    "name": "Convite para Mentoria / Transformação",
+    "category": "Vendas",
+    "text": "Olá {primeiro_nome}, {saudacao}! 🌟\n\nPassando para te fazer um convite exclusivo: abrimos algumas vagas para a nossa *Sessão Estratégica de Mentoria Financeira*.\n\nVamos analisar juntos o seu fluxo de despesas e traçar um plano de ação direto ao ponto.\n\nSe tiver interesse em garantir sua vaga, me responde aqui com um *\"QUERO\"*!"
+  },
+  {
+    "id": "tmpl-4",
+    "name": "Reengajamento & Acompanhamento",
+    "category": "Follow-up",
+    "text": "Oi {primeiro_nome}! Tudo bem por aí?\n\nPassando para saber como estão as coisas e se você conseguiu avançar no seu planejamento financeiro este mês.\n\nSe precisar de qualquer apoio ou tirar dúvidas sobre o *Raio X*, estou à disposição por aqui! 👍"
+  },
+  {
+    "id": "tmpl_1786538128036",
+    "name": "teste yuri",
+    "category": "Geral",
+    "text": "{Olá|Oi|Bom dia}, {primeiro_nome}, tudo bem?  olha isso https://tutu.exdevedor.com",
+    "createdAt": "2026-08-12T12:35:28.036Z"
+  }
+]

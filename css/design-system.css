@@ -1702,3 +1702,1354 @@ tr:last-child td { border-bottom: none; }
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ============================================================================
+   GLASSMORPHISM & AUTH VIEW ANIMATIONS
+   ============================================================================ */
+
+/* Glass card — translucent frosted surface */
+.glass-card {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  padding: 2.5rem 2rem;
+}
+
+/* View container — position for absolute stacking during transitions */
+.view-container {
+  position: relative;
+}
+
+/* Entrance animation */
+.view-enter {
+  animation: viewSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Exit animation */
+.view-exit {
+  animation: viewSlideOut 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes viewSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes viewSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+}
+
+/* Shake animation for error feedback */
+.shake {
+  animation: shakeX 0.4s ease-in-out;
+}
+
+@keyframes shakeX {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-8px); }
+  40%      { transform: translateX(8px); }
+  60%      { transform: translateX(-5px); }
+  80%      { transform: translateX(5px); }
+}
+
+/* Pulse glow for success feedback */
+.pulse-success {
+  animation: pulseGlow 0.6s ease-out;
+}
+
+@keyframes pulseGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70%  { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* Variable chip buttons for dispatcher */
+.chip-btn {
+  background: var(--bg-surface-hover, #262626);
+  border: 1px solid var(--border-color, #404040);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary, #e5e5e5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.chip-btn:hover {
+  background: var(--brand-primary, #aaff00);
+  color: #000;
+  border-color: var(--brand-primary, #aaff00);
+  transform: translateY(-1px);
+}
+
+/* Contact Name Clickable Link */
+.contact-name-link {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+.contact-name-link:hover {
+  color: var(--brand-primary, #aaff00);
+}
+.contact-name-link:hover i {
+  opacity: 1 !important;
+  transform: scale(1.1);
+}
+
+/* Single list option card */
+.single-list-option:hover {
+  background: var(--surface-hover, rgba(255, 255, 255, 0.04)) !important;
+  border-color: var(--brand-primary, #aaff00) !important;
+}
+
+/* Tag Select Badge Dropdown */
+.tag-select-badge {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23ffffff' height='12' viewBox='0 0 24 24' width='12' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  padding: 4px 22px 4px 10px !important;
+  font-family: inherit;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border-radius: 16px !important;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  line-height: 1.3;
+}
+.tag-select-badge:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+}
+.tag-select-badge option {
+  background: #1f2937 !important;
+  color: #fff !important;
+  font-weight: 500;
+  padding: 6px;
+}
+
+/* Status Select Badge Dropdown (Raio X Financial Status) */
+.status-select-badge {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23ffffff' height='12' viewBox='0 0 24 24' width='12' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  padding: 4px 22px 4px 10px !important;
+  font-family: inherit;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border-radius: 16px !important;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  line-height: 1.3;
+}
+.status-select-badge:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+}
+.status-select-badge option {
+  background: #1f2937 !important;
+  color: #fff !important;
+  font-weight: 600;
+  padding: 6px;
+}
+
+/* ============================================================================
+   CREXTIO-STYLE CONTACTS PAGE
+   Premium People-management aesthetic — warm tones, clean table, pill filters
+   ============================================================================ */
+
+/* -- Page Header -- */
+.contacts-page-header {
+  background: linear-gradient(135deg, #fef9ef 0%, #fdf6e3 30%, #f5f0e0 60%, #eef0df 100%);
+  border-radius: 24px;
+  padding: 28px 32px 20px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(0,0,0,0.04);
+}
+
+.contacts-page-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.contacts-page-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.contacts-page-subtitle {
+  font-size: 0.85rem;
+  color: #8b8b7a;
+  margin: 4px 0 0;
+  font-weight: 400;
+}
+
+.contacts-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* -- Crextio Buttons -- */
+.crx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.crx-btn--sm {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  border-radius: 10px;
+}
+
+.crx-btn-primary {
+  background: #1a1a1a;
+  color: #fff;
+}
+.crx-btn-primary:hover {
+  background: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.crx-btn-outline {
+  background: transparent;
+  color: #1a1a1a;
+  border: 1.5px solid #d1d5cb;
+}
+.crx-btn-outline:hover {
+  background: rgba(0,0,0,0.04);
+  border-color: #aaa;
+}
+
+.crx-btn-ghost {
+  background: transparent;
+  color: #6b6b5e;
+  border: none;
+}
+.crx-btn-ghost:hover {
+  background: rgba(0,0,0,0.05);
+  color: #1a1a1a;
+}
+
+.crx-btn-danger {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+.crx-btn-danger:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.crx-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+.crx-icon-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: #aaa;
+}
+
+/* -- Stats Bar -- */
+.contacts-stats-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid rgba(0,0,0,0.06);
+  transition: all 0.2s ease;
+}
+.stat-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.stat-pill__label {
+  color: rgba(0,0,0,0.55);
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+.stat-pill__value {
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.stat-pill--total {
+  background: rgba(26,26,26,0.07);
+}
+.stat-pill--total .stat-pill__value { color: #1a1a1a; }
+
+.stat-pill--whatsapp {
+  background: rgba(37,211,102,0.1);
+  border-color: rgba(37,211,102,0.15);
+}
+.stat-pill--whatsapp .stat-pill__value { color: #128c7e; }
+
+.stat-pill--red {
+  background: rgba(239,68,68,0.08);
+  border-color: rgba(239,68,68,0.12);
+}
+.stat-pill--red .stat-pill__value { color: #dc2626; }
+
+.stat-pill--yellow {
+  background: rgba(245,158,11,0.1);
+  border-color: rgba(245,158,11,0.15);
+}
+.stat-pill--yellow .stat-pill__value { color: #d97706; }
+
+.stat-pill--green {
+  background: rgba(16,185,129,0.1);
+  border-color: rgba(16,185,129,0.15);
+}
+.stat-pill--green .stat-pill__value { color: #059669; }
+
+.stat-pill--selected {
+  background: rgba(198,239,78,0.2);
+  border-color: rgba(198,239,78,0.3);
+}
+.stat-pill--selected .stat-pill__value { color: #65780a; }
+
+/* -- Sub Tabs (Crextio style) -- */
+.contacts-sub-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: var(--bg-surface);
+  border-radius: 14px;
+  padding: 4px;
+  border: 1px solid var(--border-color-light);
+  width: fit-content;
+}
+
+.contacts-sub-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+.contacts-sub-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+}
+.contacts-sub-tab.active {
+  background: #1a1a1a;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* -- Filter Chips Bar -- */
+.contacts-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.contacts-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-surface);
+  transition: all 0.2s ease;
+}
+.filter-chip:focus-within {
+  border-color: var(--brand-primary-dark);
+  box-shadow: 0 0 0 3px rgba(198,239,78,0.15);
+}
+
+.filter-chip--search {
+  min-width: 220px;
+}
+
+.filter-chip__input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  width: 100%;
+  padding: 0;
+}
+.filter-chip__input::placeholder {
+  color: var(--text-muted);
+}
+
+.filter-chip__select {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 80px;
+}
+
+.contacts-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.selection-actions-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 8px;
+  border-left: 2px solid var(--border-color-light);
+  margin-left: 4px;
+}
+
+.selection-count-badge {
+  background: var(--brand-primary);
+  color: #1a1a1a;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 20px;
+}
+
+/* -- Crextio Table -- */
+.crx-table-wrapper {
+  background: var(--bg-surface);
+  border-radius: 20px;
+  border: 1px solid var(--border-color-light);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.crx-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.crx-table thead tr {
+  background: var(--bg-surface);
+}
+
+.crx-table th {
+  padding: 14px 16px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color-light);
+  white-space: nowrap;
+  background: transparent;
+}
+
+.crx-th-check {
+  width: 44px;
+  text-align: center !important;
+}
+
+.crx-th-actions {
+  width: 76px;
+  text-align: center !important;
+}
+
+.crx-table td {
+  padding: 12px 16px;
+  font-size: 0.82rem;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  vertical-align: middle;
+  color: var(--text-primary);
+}
+
+.crx-table tbody tr {
+  transition: all 0.15s ease;
+}
+
+.crx-table tbody tr:hover {
+  background: #fefcf3 !important;
+}
+
+.crx-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.crx-table tbody tr.selected-row {
+  background: rgba(245,215,100,0.12) !important;
+}
+
+.crx-table tbody tr.selected-row:hover {
+  background: rgba(245,215,100,0.2) !important;
+}
+
+.crx-td-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 48px 16px !important;
+  font-size: 0.9rem;
+}
+
+.crx-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #1a1a1a;
+  cursor: pointer;
+}
+
+/* Table Footer */
+.contacts-table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color-light);
+  border-top: none;
+  border-radius: 0 0 20px 20px;
+}
+
+/* -- Dark Theme Overrides for Crextio Styles -- */
+.dark-theme .contacts-page-header {
+  background: linear-gradient(135deg, #1e201b 0%, #242620 50%, #1e201b 100%);
+  border-color: rgba(255,255,255,0.05);
+}
+
+.dark-theme .contacts-page-title {
+  color: #f1f3f5;
+}
+
+.dark-theme .contacts-page-subtitle {
+  color: #6b7280;
+}
+
+.dark-theme .stat-pill {
+  border-color: rgba(255,255,255,0.06);
+}
+.dark-theme .stat-pill--total {
+  background: rgba(255,255,255,0.05);
+}
+.dark-theme .stat-pill--total .stat-pill__value { color: #f1f3f5; }
+
+.dark-theme .contacts-sub-tabs {
+  background: #1e201b;
+  border-color: #383a34;
+}
+.dark-theme .contacts-sub-tab.active {
+  background: var(--brand-primary);
+  color: #1a1a1a;
+}
+
+.dark-theme .filter-chip {
+  background: #1e201b;
+  border-color: #383a34;
+}
+.dark-theme .filter-chip__input { color: #f1f3f5; }
+.dark-theme .filter-chip__select { color: #a0aec0; }
+
+.dark-theme .crx-table-wrapper {
+  background: #1e201b;
+  border-color: #383a34;
+}
+.dark-theme .crx-table th {
+  color: #6b7280;
+}
+.dark-theme .crx-table td {
+  border-bottom-color: rgba(255,255,255,0.04);
+  color: #f1f3f5;
+}
+.dark-theme .crx-table tbody tr:hover {
+  background: rgba(198,239,78,0.04) !important;
+}
+.dark-theme .crx-table tbody tr.selected-row {
+  background: rgba(198,239,78,0.08) !important;
+}
+
+.dark-theme .contacts-table-footer {
+  background: #1e201b;
+  border-color: #383a34;
+}
+
+.dark-theme .crx-btn-primary {
+  background: var(--brand-primary);
+  color: #1a1a1a;
+}
+.dark-theme .crx-btn-outline {
+  border-color: #383a34;
+  color: #a0aec0;
+}
+.dark-theme .crx-icon-btn {
+  background: #1e201b;
+  border-color: #383a34;
+}
+
+.dark-theme .crx-btn-danger {
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.2);
+}
+
+/* ============================================================================
+   FOLDER TABS — LISTS PANEL
+   ============================================================================ */
+
+/* Header */
+.lists-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.lists-header__title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lists-header__subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+/* Folder Tabs Bar */
+.folder-tabs-bar {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color-light);
+  border-radius: 18px;
+  padding: 6px;
+  margin-bottom: 16px;
+}
+
+.folder-tabs-scroll {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.folder-tabs-scroll::-webkit-scrollbar { display: none; }
+
+/* Individual Folder Tab */
+.folder-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.folder-tab:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+.folder-tab.active {
+  background: #1a1a1a;
+  color: #fff;
+  font-weight: 600;
+  border-color: transparent;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+}
+
+.folder-tab__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.folder-tab__name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.folder-tab__count {
+  background: rgba(0,0,0,0.08);
+  color: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  min-width: 22px;
+  text-align: center;
+}
+.folder-tab.active .folder-tab__count {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Folder Content Panel */
+.folder-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color-light);
+  border-radius: 20px;
+  min-height: 320px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.folder-content__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  text-align: center;
+  min-height: 240px;
+}
+
+/* Info Bar (inside folder content) */
+.folder-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color-light);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.folder-info-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.folder-info-bar__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.folder-info-bar__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+}
+
+.folder-info-bar__desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 1px;
+}
+
+.folder-info-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.folder-info-bar__badge {
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color-light);
+}
+
+/* Contacts Grid */
+.folder-contacts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+  padding: 16px 20px 20px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+/* Contact Card */
+.folder-contact-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color-light);
+  background: var(--bg-surface);
+  transition: all 0.15s ease;
+}
+.folder-contact-card:hover {
+  background: #fefcf3;
+  border-color: var(--border-color);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.folder-contact-card__avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1.5px solid;
+}
+
+.folder-contact-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.folder-contact-card__name {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.folder-contact-card__phone {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.folder-contact-card__remove {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+.folder-contact-card__remove:hover {
+  color: #ef4444;
+  background: rgba(239,68,68,0.08);
+}
+
+/* -- Dark Theme for Folder Tabs -- */
+.dark-theme .folder-tabs-bar {
+  background: #1e201b;
+  border-color: #383a34;
+}
+.dark-theme .folder-tab:hover {
+  background: #282b24;
+}
+.dark-theme .folder-tab.active {
+  background: var(--brand-primary);
+  color: #1a1a1a;
+}
+.dark-theme .folder-tab__count {
+  background: rgba(255,255,255,0.08);
+}
+.dark-theme .folder-tab.active .folder-tab__count {
+  background: rgba(0,0,0,0.15);
+}
+
+.dark-theme .folder-content {
+  background: #1e201b;
+  border-color: #383a34;
+}
+
+.dark-theme .folder-info-bar {
+  border-bottom-color: #383a34;
+}
+
+.dark-theme .folder-info-bar__badge {
+  background: #282b24;
+  border-color: #383a34;
+}
+
+.dark-theme .folder-contact-card {
+  background: #1e201b;
+  border-color: #383a34;
+}
+.dark-theme .folder-contact-card:hover {
+  background: #282b24;
+}
+
+/* ============================================================================
+   TEMPLATES MODULE STYLES (Crextio inspired)
+   ============================================================================ */
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.template-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color-light);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.template-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  border-color: var(--border-color);
+}
+
+.template-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.template-card__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.template-card__badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.template-card__badge--welcome { background: rgba(37,211,102,0.12); color: #128c7e; }
+.template-card__badge--sales { background: rgba(139,92,246,0.12); color: #7c3aed; }
+.template-card__badge--diagnostic { background: rgba(59,130,246,0.12); color: #2563eb; }
+.template-card__badge--billing { background: rgba(239,68,68,0.12); color: #dc2626; }
+.template-card__badge--followup { background: rgba(245,158,11,0.12); color: #d97706; }
+.template-card__badge--general { background: rgba(107,114,128,0.12); color: #4b5563; }
+
+.template-card__body {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  background: var(--bg-surface-raised, #f8f9fa);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid var(--border-color-light);
+}
+
+.template-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color-light);
+}
+
+.template-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.template-card__tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--bg-surface-hover);
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.template-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dark-theme .template-card {
+  background: #1e201b;
+  border-color: #383a34;
+}
+.dark-theme .template-card__body {
+  background: #282b24;
+  border-color: #383a34;
+  color: #d1d5db;
+}
+
+.template-list-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-surface-raised, #f4f5f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color-light);
+  flex-shrink: 0;
+}
+
+.template-table-preview {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  max-width: 420px;
+  max-height: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  background: var(--bg-surface-raised, #f9fafb);
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.dark-theme .template-list-icon {
+  background: #282b24;
+  border-color: #383a34;
+}
+
+.dark-theme .template-table-preview {
+  background: #282b24;
+  border-color: #383a34;
+  color: #a0aec0;
+}
+
+/* ============================================================================
+   DISPATCHER MODULE STYLES (Crextio inspired)
+   ============================================================================ */
+
+/* Source Card & Mode Toggle */
+.dispatcher-source-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color-light);
+  border-radius: 20px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.dispatcher-source-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color-light);
+  margin-bottom: 12px;
+}
+
+.dispatcher-source-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.dispatcher-source-mode-toggle {
+  display: flex;
+  background: var(--bg-surface-raised, #f6f7f7);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--border-color-light);
+}
+
+.dispatcher-source-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.dispatcher-source-pill:hover {
+  color: var(--text-primary);
+}
+.dispatcher-source-pill.active {
+  background: #1a1a1a;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* WhatsApp Phone Mockup */
+.wa-mockup-header {
+  background: #075e54;
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wa-mockup-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+}
+
+.wa-mockup-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: block;
+  line-height: 1.2;
+}
+
+.wa-mockup-status {
+  font-size: 0.72rem;
+  opacity: 0.85;
+  display: block;
+}
+
+.wa-mockup-chat {
+  background: #efeae2;
+  background-image: radial-gradient(rgba(0,0,0,0.04) 1px, transparent 0);
+  background-size: 16px 16px;
+  padding: 20px 16px;
+  min-height: 160px;
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.wa-mockup-bubble {
+  background: #d9fdd3;
+  color: #111b21;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border-top-right-radius: 2px;
+  max-width: 88%;
+  align-self: flex-end;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+  position: relative;
+}
+
+.dark-theme .dispatcher-source-card {
+  background: #1e201b;
+  border-color: #383a34;
+}
+.dark-theme .dispatcher-source-mode-toggle {
+  background: #282b24;
+  border-color: #383a34;
+}
+.dark-theme .dispatcher-source-pill.active {
+  background: var(--brand-primary);
+  color: #1a1a1a;
+}
+.dark-theme .wa-mockup-chat {
+  background: #0b141a;
+}
+.dark-theme .wa-mockup-bubble {
+  background: #005c4b;
+  color: #e9edef;
+}
+
+/* Quick Add to Agenda in Inbox */
+.btn-inbox-add-agenda {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  background: var(--bg-surface-raised, #f6f7f7);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 3px;
+}
+.btn-inbox-add-agenda:hover {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: #1a1a1a;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.dark-theme .btn-inbox-add-agenda {
+  background: #282b24;
+  border-color: #383a34;
+  color: #e0e0e0;
+}
+.dark-theme .btn-inbox-add-agenda:hover {
+  background: var(--brand-primary);
+  color: #1a1a1a;
+  border-color: var(--brand-primary);
+}
+
+/* Header Agent Dropdown */
+.header-agent-select {
+  background: transparent;
+  border: none;
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  cursor: pointer;
+  outline: none;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  max-width: 140px;
+}
+.header-agent-select:hover,
+.header-agent-select:focus {
+  background: rgba(0, 0, 0, 0.05);
+}
+.header-agent-select option {
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-primary, #111111);
+  font-weight: 500;
+}
+.dark-theme .header-agent-select:hover,
+.dark-theme .header-agent-select:focus {
+  background: rgba(255, 255, 255, 0.08);
+}
+.dark-theme .header-agent-select option {
+  background: #1e201b;
+  color: #f1f5f9;
+}
+
+

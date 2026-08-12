@@ -1,4 +1,8 @@
 node_modules/
 .env
+.env.*
 .DS_Store
 *.log
+auth_instances/
+auth_info_baileys/
+uploads/

@@ -673,14 +673,17 @@ async function sendMediaMessage(phone, base64Data, mimeType, caption, options = 
   }
 
   const { sock, config } = targetInstance;
-  const jid = resolveJid(phone);
+  const jid = await resolveJid(phone, sock);
+  if (!jid) throw new Error(`Número inválido ou sem WhatsApp: ${phone}`);
 
   try {
     if (options.simulateTyping !== false) {
-      await sock.presenceSubscribe(jid);
-      await sock.sendPresenceUpdate('recording', jid);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      await sock.sendPresenceUpdate('paused', jid);
+      try {
+        await sock.presenceSubscribe(jid);
+        await sock.sendPresenceUpdate('recording', jid);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        await sock.sendPresenceUpdate('paused', jid);
+      } catch (e) { /* ignore */ }
     }
 
     const buffer = Buffer.from(base64Data, 'base64');
@@ -695,7 +698,13 @@ async function sendMediaMessage(phone, base64Data, mimeType, caption, options = 
     } else if (mimeType.includes('webp')) {
       messagePayload = { sticker: buffer };
     } else {
-      messagePayload = { document: buffer, mimetype: mimeType, fileName: caption || 'documento' };
+      const docName = options.fileName || (caption && caption.length < 80 && !caption.includes('\n') ? caption : 'documento.pdf');
+      messagePayload = {
+        document: buffer,
+        mimetype: mimeType || 'application/pdf',
+        fileName: docName,
+        caption: caption || ''
+      };
     }
 
     const res = await sock.sendMessage(jid, messagePayload);

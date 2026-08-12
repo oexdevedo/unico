@@ -1,0 +1,61 @@
+[
+  {
+    "id": "list_1786464027897",
+    "name": "quentes",
+    "description": "quentes",
+    "color": "#ef4444",
+    "contacts": [
+      {
+        "phone": "(61) 98162-6353",
+        "name": "Talita Dias"
+      }
+    ],
+    "createdAt": "2026-08-11T16:00:27.897Z"
+  },
+  {
+    "id": "list_1786478236148",
+    "name": "Frios",
+    "description": "",
+    "color": "#3b82f6",
+    "contacts": [
+      {
+        "phone": "(61) 99877-7769",
+        "name": "Bárbara pacheco"
+      }
+    ],
+    "createdAt": "2026-08-11T19:57:16.148Z"
+  },
+  {
+    "id": "list_quente",
+    "name": "🔥 Quente",
+    "color": "#ef4444",
+    "description": "Leads com alto interesse",
+    "contacts": [],
+    "createdAt": "2026-08-12T12:17:31.551Z"
+  },
+  {
+    "id": "list_morno",
+    "name": "☀️ Morno",
+    "color": "#f59e0b",
+    "description": "Leads em qualificação",
+    "contacts": [
+      {
+        "phone": "(61) 99228-7012",
+        "name": "Nayara Miranda"
+      },
+      {
+        "phone": "(61) 99222-7000",
+        "name": "Nayara miranda"
+      },
+      {
+        "phone": "(61) 99129-1751",
+        "name": "Nayara"
+      },
+      {
+        "phone": "(61) 98168-4300",
+        "name": "yuri"
+      }
+    ],
+    "createdAt": "2026-08-12T12:17:31.551Z"
+  }
+]
