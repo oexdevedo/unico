@@ -1614,6 +1614,169 @@ function compileAgentPrompt(fields) {
 ${fields.flow || '1. Cumprimentar pelo nome.\n2. Entender a necessidade.\n3. Oferecer a solução clara.\n4. Fazer pergunta de fechamento.'}`.trim();
 }
 
+window.handleAgentMdImport = function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (evt) => {
+    try {
+      const text = evt.target.result;
+      const parsed = parseMarkdownAgentTemplate(text, file.name);
+      
+      // Preenche os campos do formulário
+      if (parsed.name) document.getElementById('agentName').value = parsed.name;
+      if (parsed.icon) document.getElementById('agentIcon').value = parsed.icon;
+      if (parsed.role) document.getElementById('agentRole').value = parsed.role;
+      if (parsed.goal) document.getElementById('agentGoal').value = parsed.goal;
+      if (parsed.commStyle) document.getElementById('agentCommStyle').value = parsed.commStyle;
+      if (parsed.tone) document.getElementById('agentTone').value = parsed.tone;
+      if (parsed.emojiPolicy) {
+        const sel = document.getElementById('agentEmojiPolicy');
+        const ep = parsed.emojiPolicy.toLowerCase();
+        if (ep.includes('não') || ep.includes('nenhum') || ep.includes('sem')) {
+          sel.value = 'Não utilizar emojis';
+        } else if (ep.includes('livre') || ep.includes('frequente') || ep.includes('expressivo')) {
+          sel.value = 'Uso livre e expressivo de emojis';
+        } else {
+          sel.value = 'Usar com moderação (1 a 2 emojis por mensagem) para manter o tom amigável';
+        }
+      }
+      if (parsed.language) document.getElementById('agentLanguage').value = parsed.language;
+      if (parsed.forbiddenTopics) document.getElementById('agentForbiddenTopics').value = parsed.forbiddenTopics;
+      if (parsed.confidentialPolicy) document.getElementById('agentConfidentialPolicy').value = parsed.confidentialPolicy;
+      if (parsed.knowledgeLimits) document.getElementById('agentKnowledgeLimits').value = parsed.knowledgeLimits;
+      if (parsed.toneAvoid) document.getElementById('agentToneAvoid').value = parsed.toneAvoid;
+      if (parsed.mainKnowledge) document.getElementById('agentMainKnowledge').value = parsed.mainKnowledge;
+      if (parsed.responseStructure) document.getElementById('agentResponseStructure').value = parsed.responseStructure;
+      if (parsed.flow) document.getElementById('agentFlow').value = parsed.flow;
+
+      // Anexa automaticamente à base de conhecimento do agente
+      const agentId = document.getElementById('agentId').value || (parsed.name ? parsed.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '');
+      if (agentId) {
+        try {
+          await AICopilotModule.saveContextFile(agentId, file.name, text);
+          renderModalContextFilesList(agentId);
+        } catch (fErr) {
+          console.warn('Não foi possível anexar arquivo de contexto:', fErr);
+        }
+      }
+
+      showToast(`✨ Formulário preenchido com sucesso a partir de "${file.name}"!`, 'success');
+    } catch (err) {
+      console.error('Erro ao importar arquivo Markdown:', err);
+      showToast('Erro ao processar arquivo Markdown: ' + err.message, 'error');
+    } finally {
+      e.target.value = '';
+    }
+  };
+  reader.onerror = () => showToast('Erro ao ler arquivo Markdown.', 'error');
+  reader.readAsText(file);
+};
+
+function parseMarkdownAgentTemplate(text, fileName = '') {
+  const result = {};
+
+  // Extrai emoji no texto ou título
+  const emojiMatch = text.match(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u);
+  if (emojiMatch) result.icon = emojiMatch[0];
+
+  function extractFieldValue(patterns) {
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1] && match[1].trim()) {
+        return match[1].trim().replace(/^\[|\]$/g, '');
+      }
+    }
+    return '';
+  }
+
+  // 1. Nome do Agente
+  result.name = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Nome(?: do Agente)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
+    /#+\s*(?:🤖|🧠|💼|⚡)?\s*Template de Prompt para Agente de IA:?\s*([^\n]+)/i,
+    /#+\s*(?:🤖|🧠|💼|⚡)?\s*([A-Za-z0-9\s\-_]+)/i
+  ]) || fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+
+  // 2. Função Principal
+  result.role = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Função(?: Principal)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
+    /(?:\*|\-)?\s*(?:\*\*)?Papel(?: e Função)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  // 3. Objetivo Final
+  result.goal = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Objetivo(?: Final)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  // 4. Personalidade e Tom
+  result.commStyle = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Estilo(?: de Comunicação)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  result.tone = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Tom(?: de Voz)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  result.emojiPolicy = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Uso de Emojis(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
+    /(?:\*|\-)?\s*(?:\*\*)?Emojis(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  result.language = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Idioma(?:\/Regionalismo)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
+    /(?:\*|\-)?\s*(?:\*\*)?Regionalismo(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  // 5. Restrições e Limites
+  result.forbiddenTopics = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Assuntos Proibidos(?:\*\*)?:?\s*\n?((?:(?:\*|\-)\s*[^\n]+\n?)+)/i,
+    /(?:\*|\-)?\s*(?:\*\*)?Assuntos Proibidos(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  result.confidentialPolicy = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Informações Confidenciais(?:\*\*)?:?\s*\n?((?:(?:\*|\-)\s*[^\n]+\n?)+)/i,
+    /(?:\*|\-)?\s*(?:\*\*)?Informações Confidenciais(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  result.knowledgeLimits = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Limites? de Conhecimento(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  result.toneAvoid = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Tom a Evitar(?:\*\*)?:?\s*\n?((?:(?:\*|\-)\s*[^\n]+\n?)+)/i,
+    /(?:\*|\-)?\s*(?:\*\*)?Tom a Evitar(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  // 6. Conhecimento e Base
+  const mainK = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Informações Principais(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
+    /(?:\*|\-)?\s*(?:\*\*)?Conhecimento e Contexto de Base(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+  const fontK = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Fontes Recomendadas(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+  result.mainKnowledge = [mainK, fontK ? `Fontes: ${fontK}` : ''].filter(Boolean).join('\n');
+
+  // 7. Diretrizes e Fluxo
+  result.responseStructure = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Estrutura da Resposta(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  result.flow = extractFieldValue([
+    /(?:\*|\-)?\s*(?:\*\*)?Fluxo de Atendimento(?:\*\*)?:?\s*\n?((?:\d+\.\s*[^\n]+\n?)+)/i,
+    /(?:\*|\-)?\s*(?:\*\*)?Fluxo de Atendimento(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  // Fallback se for markdown de formato livre
+  if (!result.role && !result.goal && text.trim().length > 0) {
+    result.role = text.slice(0, 250).trim();
+    result.mainKnowledge = text.slice(250).trim();
+  }
+
+  return result;
+}
+
 window.openAgentModal = function() {
   document.getElementById('agentForm').reset();
   document.getElementById('agentId').value = '';

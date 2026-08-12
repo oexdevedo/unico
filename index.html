@@ -1373,6 +1373,25 @@
         <form id="agentForm" onsubmit="saveAgent(event)">
           <input type="hidden" id="agentId">
 
+          <!-- Banner de Importação Rápida via Arquivo Markdown (.md) -->
+          <div style="background:linear-gradient(135deg, rgba(212,249,56,0.15), rgba(37,211,102,0.1)); border:1.5px dashed var(--brand-primary, #d4f938); border-radius:14px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:36px; height:36px; border-radius:10px; background:var(--brand-primary, #d4f938); color:#111; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:bold;">
+                <i class="ti ti-markdown"></i>
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Preencher formulário via arquivo .MD</div>
+                <div style="font-size:11.5px; color:var(--text-muted);">Envie um prompt ou template em Markdown para preencher todas as seções automaticamente.</div>
+              </div>
+            </div>
+            <div>
+              <input type="file" id="agentMdImportInput" accept=".md,.markdown,.txt" style="display:none" onchange="handleAgentMdImport(event)">
+              <button type="button" class="crx-btn crx-btn-primary crx-btn--sm" onclick="document.getElementById('agentMdImportInput').click()" style="white-space:nowrap;">
+                <i class="ti ti-upload"></i> Carregar .MD
+              </button>
+            </div>
+          </div>
+
           <!-- SECTION 1: Papel e Função -->
           <div class="agent-form-section mb-4" style="background:var(--bg-surface-raised, #f8fafc); border:1px solid var(--border-color-light); border-radius:16px; padding:16px;">
             <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
