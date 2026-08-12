@@ -1674,6 +1674,65 @@ window.handleAgentMdImport = function(e) {
   reader.readAsText(file);
 };
 
+function cleanAnswerText(str) {
+  if (!str) return '';
+  let cleaned = str.trim();
+  
+  // Remove outer brackets [ ]
+  if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  
+  // Extrai resposta ou exemplo real caso seja texto instrucional
+  const exMatch = cleaned.match(/(?:ex|exemplo|por exemplo)\s*:\s*([^/\]]+)/i);
+  if (exMatch && (cleaned.toLowerCase().startsWith('descreva') || cleaned.toLowerCase().startsWith('liste') || cleaned.toLowerCase().startsWith('nome da') || cleaned.toLowerCase().startsWith('o que o') || cleaned.toLowerCase().startsWith('quem sou'))) {
+    cleaned = exMatch[1].trim();
+  } else if (/^ex:\s*/i.test(cleaned)) {
+    cleaned = cleaned.replace(/^ex:\s*/i, '').trim();
+  }
+
+  // Remove formatações markdown residuais
+  cleaned = cleaned.replace(/^\*\*|\*\*$/g, '').replace(/^\*|\*$/g, '').replace(/^_|_$/g, '');
+  return cleaned.trim();
+}
+
+function extractMultilineItems(text, headerPatterns) {
+  for (const headerPattern of headerPatterns) {
+    const match = text.match(headerPattern);
+    if (!match) continue;
+
+    const startIndex = match.index + match[0].length;
+    const remaining = text.slice(startIndex);
+    const lines = remaining.split('\n');
+    const items = [];
+
+    for (let line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        if (items.length > 0) continue;
+        else continue;
+      }
+
+      // Interrompe ao encontrar outro rótulo em negrito, título ou separador
+      if (/^(?:(?:\*|\-|>)\s*)?\*\*[A-Za-z0-9\sÀ-ÿ\/\-—–]+:\*\*/i.test(trimmed) || /^#+/i.test(trimmed) || /^---+/.test(trimmed)) {
+        break;
+      }
+
+      const bulletMatch = trimmed.match(/^(?:(?:\*|\-|>|\d+\.)\s*)(.+)/);
+      if (bulletMatch) {
+        const itemClean = cleanAnswerText(bulletMatch[1]);
+        if (itemClean) items.push(itemClean);
+      } else {
+        const itemClean = cleanAnswerText(trimmed);
+        if (itemClean) items.push(itemClean);
+      }
+    }
+
+    if (items.length > 0) return items.join('\n');
+  }
+  return '';
+}
+
 function parseMarkdownAgentTemplate(text, fileName = '') {
   const result = {};
 
@@ -1681,91 +1740,135 @@ function parseMarkdownAgentTemplate(text, fileName = '') {
   const emojiMatch = text.match(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u);
   if (emojiMatch) result.icon = emojiMatch[0];
 
-  function extractFieldValue(patterns) {
+  function extractSingleLine(patterns) {
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match && match[1] && match[1].trim()) {
-        return match[1].trim().replace(/^\[|\]$/g, '');
+        const val = cleanAnswerText(match[1]);
+        if (val) return val;
       }
     }
     return '';
   }
 
-  // 1. Nome do Agente
-  result.name = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Nome(?: do Agente)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
-    /#+\s*(?:🤖|🧠|💼|⚡)?\s*Template de Prompt para Agente de IA:?\s*([^\n]+)/i,
-    /#+\s*(?:🤖|🧠|💼|⚡)?\s*([A-Za-z0-9\s\-_]+)/i
-  ]) || fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+  // Bloco de exemplo preenchido (se houver)
+  const exemploBlockMatch = text.match(/(?:##+\s*(?:📌\s*)?Exemplo Preenchido[\s\S]+)/i);
+  const exemploText = exemploBlockMatch ? exemploBlockMatch[0] : '';
 
-  // 2. Função Principal
-  result.role = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Função(?: Principal)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
-    /(?:\*|\-)?\s*(?:\*\*)?Papel(?: e Função)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  // 1. Nome do Agente
+  result.name = extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Nome(?: do Agente)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
+    /(?:Você é a|Você é o)\s+\*\*([A-Za-z0-9\s\-_]+)\*\*/i,
+    /#+\s*(?:🤖|🧠|💼|⚡)?\s*Template de Prompt para Agente de IA:?\s*([^\n]+)/i
   ]);
 
+  if (!result.name && exemploText) {
+    const nomeExemplo = exemploText.match(/(?:Você é a|Você é o)\s+\*\*([A-Za-z0-9\s\-_]+)\*\*/i) || exemploText.match(/Nome:\s*([^\n]+)/i);
+    if (nomeExemplo) result.name = cleanAnswerText(nomeExemplo[1]);
+  }
+
+  if (!result.name) {
+    result.name = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+  }
+
+  // 2. Função Principal
+  result.role = extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Função(?: Principal)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
+    /(?:\*|\-|>)?\s*(?:\*\*)?Papel(?: e Função)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  ]);
+
+  if (!result.role && exemploText) {
+    const papelExemplo = exemploText.match(/(?:>|\*|-)?\s*\*\*Papel e Função:\*\*\s*([^\n]+)/i);
+    if (papelExemplo) result.role = cleanAnswerText(papelExemplo[1]);
+  }
+
   // 3. Objetivo Final
-  result.goal = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Objetivo(?: Final)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  result.goal = extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Objetivo(?: Final)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
 
   // 4. Personalidade e Tom
-  result.commStyle = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Estilo(?: de Comunicação)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  result.commStyle = extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Estilo(?: de Comunicação)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
 
-  result.tone = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Tom(?: de Voz)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  result.tone = extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Tom(?: de Voz)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
 
-  result.emojiPolicy = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Uso de Emojis(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
-    /(?:\*|\-)?\s*(?:\*\*)?Emojis(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  result.emojiPolicy = extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Uso de Emojis(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
+    /(?:\*|\-|>)?\s*(?:\*\*)?Emojis(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
 
-  result.language = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Idioma(?:\/Regionalismo)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
-    /(?:\*|\-)?\s*(?:\*\*)?Regionalismo(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  result.language = extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Idioma(?:\/Regionalismo)?(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
+    /(?:\*|\-|>)?\s*(?:\*\*)?Regionalismo(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
 
-  // 5. Restrições e Limites
-  result.forbiddenTopics = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Assuntos Proibidos(?:\*\*)?:?\s*\n?((?:(?:\*|\-)\s*[^\n]+\n?)+)/i,
-    /(?:\*|\-)?\s*(?:\*\*)?Assuntos Proibidos(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  if (!result.commStyle && exemploText) {
+    const persExemplo = exemploText.match(/(?:>|\*|-)?\s*\*\*Personalidade:\*\*\s*([^\n]+)/i);
+    if (persExemplo) result.commStyle = cleanAnswerText(persExemplo[1]);
+  }
+
+  // 5. Restrições e Limites (captura itens multilinhas)
+  result.forbiddenTopics = extractMultilineItems(text, [
+    /(?:\*|\-|>)?\s*\*\*Assuntos Proibidos:\*\*/i
+  ]) || extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Assuntos Proibidos(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
 
-  result.confidentialPolicy = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Informações Confidenciais(?:\*\*)?:?\s*\n?((?:(?:\*|\-)\s*[^\n]+\n?)+)/i,
-    /(?:\*|\-)?\s*(?:\*\*)?Informações Confidenciais(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  result.confidentialPolicy = extractMultilineItems(text, [
+    /(?:\*|\-|>)?\s*\*\*Informações Confidenciais:\*\*/i
+  ]) || extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Informações Confidenciais(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
 
-  result.knowledgeLimits = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Limites? de Conhecimento(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  result.knowledgeLimits = extractMultilineItems(text, [
+    /(?:\*|\-|>)?\s*\*\*Limites?(?: de Conhecimento)?:\*\*/i
+  ]) || extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Limites? de Conhecimento(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
 
-  result.toneAvoid = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Tom a Evitar(?:\*\*)?:?\s*\n?((?:(?:\*|\-)\s*[^\n]+\n?)+)/i,
-    /(?:\*|\-)?\s*(?:\*\*)?Tom a Evitar(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  result.toneAvoid = extractMultilineItems(text, [
+    /(?:\*|\-|>)?\s*\*\*Tom a Evitar:\*\*/i
+  ]) || extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Tom a Evitar(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
+
+  if (!result.forbiddenTopics && exemploText) {
+    const naoFalar = extractMultilineItems(exemploText, [
+      /(?:>|\*|-)?\s*\*\*O que NÃO (?:falar|devo falar):\*\*/i
+    ]);
+    if (naoFalar) result.forbiddenTopics = naoFalar;
+  }
 
   // 6. Conhecimento e Base
-  const mainK = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Informações Principais(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i,
-    /(?:\*|\-)?\s*(?:\*\*)?Conhecimento e Contexto de Base(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  const mainK = extractMultilineItems(text, [
+    /(?:\*|\-|>)?\s*\*\*Informações Principais:\*\*/i
+  ]) || extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Informações Principais(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
-  const fontK = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Fontes Recomendadas(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+
+  const fontK = extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Fontes Recomendadas(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
-  result.mainKnowledge = [mainK, fontK ? `Fontes: ${fontK}` : ''].filter(Boolean).join('\n');
+  result.mainKnowledge = [mainK, fontK ? `Fontes Recomendadas: ${fontK}` : ''].filter(Boolean).join('\n');
 
   // 7. Diretrizes e Fluxo
-  result.responseStructure = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Estrutura da Resposta(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  result.responseStructure = extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Estrutura da Resposta(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
 
-  result.flow = extractFieldValue([
-    /(?:\*|\-)?\s*(?:\*\*)?Fluxo de Atendimento(?:\*\*)?:?\s*\n?((?:\d+\.\s*[^\n]+\n?)+)/i,
-    /(?:\*|\-)?\s*(?:\*\*)?Fluxo de Atendimento(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
+  if (!result.responseStructure && exemploText) {
+    const dirExemplo = exemploText.match(/(?:>|\*|-)?\s*\*\*Diretrizes:\*\*\s*([^\n]+)/i);
+    if (dirExemplo) result.responseStructure = cleanAnswerText(dirExemplo[1]);
+  }
+
+  result.flow = extractMultilineItems(text, [
+    /(?:\*|\-|>)?\s*\*\*Fluxo de Atendimento:\*\*/i
+  ]) || extractSingleLine([
+    /(?:\*|\-|>)?\s*(?:\*\*)?Fluxo de Atendimento(?:\*\*)?:?\s*(?:\[)?([^\n\]]+)(?:\])?/i
   ]);
 
   // Fallback se for markdown de formato livre
