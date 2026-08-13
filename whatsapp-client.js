@@ -723,9 +723,16 @@ async function sendTextMessage(phone, text, options = {}) {
   } else if (options.instanceId) {
     const runtime = runtimeInstances.get(options.instanceId);
     if (!runtime || runtime.status !== 'connected' || !runtime.sock) {
-      throw new Error(`Conta ${options.instanceId} não está conectada.`);
+      const connected = getConnectedInstances();
+      if (connected.length > 0) {
+        targetInstance = connected[0].runtime;
+        console.warn(`Fallback: Instância ${options.instanceId} offline. Usando ${targetInstance.config.name}`);
+      } else {
+        throw new Error(`Conta ${options.instanceId} não está conectada e não há outras ativas.`);
+      }
+    } else {
+      targetInstance = runtime;
     }
-    targetInstance = runtime;
   } else {
     const connected = getConnectedInstances();
     if (connected.length > 0) targetInstance = connected[0].runtime;
@@ -812,9 +819,16 @@ async function sendMediaMessage(phone, base64Data, mimeType, caption, options = 
   } else if (options.instanceId) {
     const runtime = runtimeInstances.get(options.instanceId);
     if (!runtime || runtime.status !== 'connected' || !runtime.sock) {
-      throw new Error(`Conta ${options.instanceId} não está conectada.`);
+      const connected = getConnectedInstances();
+      if (connected.length > 0) {
+        targetInstance = connected[0].runtime;
+        console.warn(`Fallback: Instância ${options.instanceId} offline. Usando ${targetInstance.config.name}`);
+      } else {
+        throw new Error(`Conta ${options.instanceId} não está conectada e não há outras ativas.`);
+      }
+    } else {
+      targetInstance = runtime;
     }
-    targetInstance = runtime;
   } else {
     for (const [id, rt] of runtimeInstances.entries()) {
       if (rt.status === 'connected' && rt.sock) { targetInstance = rt; break; }

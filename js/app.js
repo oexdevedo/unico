@@ -377,6 +377,9 @@ const App = (() => {
           </td>
           <td style="white-space:nowrap; text-align:center;">
             <div style="display:inline-flex; gap:4px; align-items:center;">
+              <button type="button" class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); window.openChatWithContact('${phone}')" title="Mandar Mensagem" style="padding:4px 6px; color:var(--brand-primary);">
+                <i class="ti ti-message-circle" style="font-size:0.95rem;"></i>
+              </button>
               <button type="button" class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); window.openEditContactModal('${c.id}')" title="Editar contato" style="padding:4px 6px; color:var(--text-muted);">
                 <i class="ti ti-pencil" style="font-size:0.95rem;"></i>
               </button>
@@ -431,6 +434,23 @@ const App = (() => {
       const modal = document.getElementById('editContactModal');
       if (modal) modal.classList.add('active');
     };
+
+    window.openChatWithContact = function(phoneStr) {
+      if (!phoneStr) return showToast('Telefone inválido para chat.', 'warning');
+      const raw = String(phoneStr).replace(/\D/g, '');
+      if (!raw) return showToast('Telefone inválido para chat.', 'warning');
+      
+      const jid = `${raw}@s.whatsapp.net`;
+      
+      // Mudar aba
+      App.switchTab('tab-inbox');
+      
+      // Selecionar o chat (null seleciona primeira instância auto)
+      if (typeof selectChat === 'function') {
+        selectChat(jid, null);
+      }
+    };
+
 
     window.openEditContactModal = function(contactId) {
       const contact = SupabaseModule.getAllContacts().find(c => String(c.id) === String(contactId));
@@ -608,6 +628,26 @@ const App = (() => {
       });
     } catch (e) {
       console.warn('Erro ao carregar instâncias para o disparador:', e);
+    }
+  }
+
+  async function populateChatInstanceSelect() {
+    const select = document.getElementById('chatInstanceSelect');
+    if (!select) return;
+
+    try {
+      const instances = await WhatsAppDirect.fetchInstances();
+      const connected = instances.filter(i => i.status === 'connected' || i.status === 'open');
+
+      select.innerHTML = '<option value="">Automático</option>';
+      connected.forEach(inst => {
+        const opt = document.createElement('option');
+        opt.value = inst.id;
+        opt.textContent = `${inst.name}`;
+        select.appendChild(opt);
+      });
+    } catch (e) {
+      console.warn('Erro ao carregar instâncias para o chat:', e);
     }
   }
 
@@ -795,7 +835,28 @@ const App = (() => {
   // INBOX TAB
   // ========================================================================
   function setupInboxTab() {
+    populateChatInstanceSelect();
     document.getElementById('inboxSearchInput')?.addEventListener('input', () => renderInboxList());
+
+    document.getElementById('btnDeleteChat')?.addEventListener('click', async () => {
+      if (!selectedChatJid) return showToast('Selecione uma conversa primeiro', 'warning');
+      if (!confirm('Tem certeza que deseja apagar esta conversa?')) return;
+      try {
+        await WhatsAppDirect.deleteConversation(selectedChatJid, selectedChatInstance);
+        showToast('Conversa apagada com sucesso', 'success');
+        selectedChatJid = null;
+        renderInboxList();
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+          chatMessages.innerHTML = '<div class="text-center text-muted py-8">Selecione uma conversa para ver as mensagens</div>';
+        }
+        document.getElementById('chatContactName').textContent = 'Selecione uma conversa';
+        document.getElementById('chatContactPhone').textContent = 'Clique em um contato à esquerda';
+        document.getElementById('chatAvatar').innerHTML = '';
+      } catch (e) {
+        showToast('Erro ao apagar conversa: ' + e.message, 'error');
+      }
+    });
 
     document.getElementById('btnSendChat')?.addEventListener('click', sendChatMessage);
     document.getElementById('chatInputText')?.addEventListener('keydown', (e) => {
@@ -850,6 +911,173 @@ const App = (() => {
       previewAudio.src = '';
     });
 
+    // --- Emoji Picker Logic ---
+    const btnEmojiPicker = document.getElementById('btnEmojiPicker');
+    const emojiPickerContainer = document.getElementById('emojiPickerContainer');
+    const chatInput = document.getElementById('chatInputText');
+    const emojiPicker = document.querySelector('emoji-picker');
+
+    if (btnEmojiPicker && emojiPickerContainer && emojiPicker) {
+      btnEmojiPicker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        emojiPickerContainer.style.display = emojiPickerContainer.style.display === 'none' ? 'block' : 'none';
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!emojiPickerContainer.contains(e.target) && e.target !== btnEmojiPicker) {
+          emojiPickerContainer.style.display = 'none';
+        }
+      });
+
+      emojiPicker.addEventListener('emoji-click', (e) => {
+        const emoji = e.detail.unicode;
+        if (chatInput) {
+          const start = chatInput.selectionStart;
+          const end = chatInput.selectionEnd;
+          const text = chatInput.value;
+          chatInput.value = text.substring(0, start) + emoji + text.substring(end);
+          chatInput.selectionStart = chatInput.selectionEnd = start + emoji.length;
+          chatInput.focus();
+        }
+      });
+    }
+
+    // --- Audio Recording Logic ---
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecordingAudio = false;
+    let recordingTimerInterval;
+    let recordingStartTime;
+    let cancelRecording = false;
+    
+    const btnRecordAudio = document.getElementById('btnRecordAudio');
+    const btnCancelRecording = document.getElementById('btnCancelRecording');
+    const chatRecordingUI = document.getElementById('chatRecordingUI');
+    const btnSendChat = document.getElementById('btnSendChat');
+    const btnAttachMedia = document.getElementById('btnAttachMedia');
+    const chatInputWrapper = document.querySelector('.chat-input-wrapper');
+    
+    function updateRecordingTimer() {
+        const now = Date.now();
+        const diff = new Date(now - recordingStartTime);
+        const m = diff.getMinutes().toString().padStart(2, '0');
+        const s = diff.getSeconds().toString().padStart(2, '0');
+        document.getElementById('chatRecordingTimer').textContent = `${m}:${s}`;
+    }
+
+    function resetRecordingUI() {
+        if (recordingTimerInterval) clearInterval(recordingTimerInterval);
+        isRecordingAudio = false;
+        cancelRecording = false;
+        
+        chatRecordingUI.style.display = 'none';
+        chatInput.style.display = 'block';
+        btnAttachMedia.style.display = 'flex';
+        btnEmojiPicker.style.display = 'flex';
+        btnSendChat.style.display = 'flex';
+        
+        // Reset mic icon
+        btnRecordAudio.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+        `;
+        btnRecordAudio.classList.remove('recording-pulse');
+        btnRecordAudio.style.color = '';
+    }
+    
+    if (btnCancelRecording) {
+        btnCancelRecording.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                cancelRecording = true;
+                mediaRecorder.stop();
+            }
+        });
+    }
+    
+    if (btnRecordAudio) {
+      btnRecordAudio.addEventListener('click', async () => {
+        if (isRecordingAudio && mediaRecorder && mediaRecorder.state === 'recording') {
+          // User clicked send!
+          mediaRecorder.stop();
+        } else {
+          // Start recording
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            
+            mediaRecorder.addEventListener('dataavailable', event => {
+              audioChunks.push(event.data);
+            });
+            
+            mediaRecorder.addEventListener('stop', async () => {
+              stream.getTracks().forEach(track => track.stop());
+              
+              if (cancelRecording) {
+                  resetRecordingUI();
+                  return;
+              }
+              
+              // Proceed to send
+              const audioBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
+              const reader = new FileReader();
+              reader.onload = async (ev) => {
+                const base64Data = ev.target.result.split(',')[1];
+                resetRecordingUI();
+                
+                try {
+                  showToast('Enviando áudio...', 'info');
+                  await WhatsAppDirect.sendMediaMessage(selectedChatJid, base64Data, 'audio/webm;codecs=opus', '', {
+                    instanceId: selectedChatInstance
+                  });
+                  await refreshInbox();
+                  
+                  const container = document.getElementById('chatMessages');
+                  if (container) container.scrollTop = container.scrollHeight;
+                } catch (err) {
+                  showToast('Erro ao enviar áudio.', 'error');
+                }
+              };
+              reader.readAsDataURL(audioBlob);
+            });
+            
+            mediaRecorder.start();
+            isRecordingAudio = true;
+            cancelRecording = false;
+            
+            // Update UI
+            chatInput.style.display = 'none';
+            btnAttachMedia.style.display = 'none';
+            btnEmojiPicker.style.display = 'none';
+            btnSendChat.style.display = 'none';
+            chatRecordingUI.style.display = 'flex';
+            
+            // Start timer
+            recordingStartTime = Date.now();
+            updateRecordingTimer();
+            recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+            
+            // Change mic icon to Send icon
+            btnRecordAudio.innerHTML = `
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            `;
+            
+          } catch (err) {
+            showToast('Não foi possível acessar o microfone.', 'error');
+          }
+        }
+      });
+    }
+
+
     // Co-Pilot button
     document.getElementById('btnAskCopilot')?.addEventListener('click', async () => {
       if (!selectedChatJid) return;
@@ -880,11 +1108,21 @@ const App = (() => {
     ).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   }
 
+  let lastChatMessagesHash = '';
+
   async function refreshInbox() {
     const allMessages = await WhatsAppDirect.fetchMessages();
+    const newHash = JSON.stringify(allMessages);
+    
+    if (newHash === lastChatMessagesHash) {
+      return false; // No changes, prevent flicker
+    }
+    
+    lastChatMessagesHash = newHash;
     chatMessages = allMessages;
 
     renderInboxList();
+    return true;
   }
 
   // Helper to match a JID or raw phone against registered contacts in SupabaseModule
@@ -1084,6 +1322,16 @@ const App = (() => {
     renderInboxList();
     renderChatMessages();
 
+    // Update instance selector
+    const instSelect = document.getElementById('chatInstanceSelect');
+    if (instSelect) {
+      instSelect.value = instanceId || '';
+      // If the exact instance is not connected/listed, keep it on Auto
+      if (instSelect.value !== instanceId) {
+         instSelect.value = '';
+      }
+    }
+
     // Show co-pilot button
     document.getElementById('btnAskCopilot').style.display = 'flex';
     document.getElementById('chatAiModeSelect').style.display = 'block';
@@ -1134,7 +1382,7 @@ const App = (() => {
       }
     }
 
-    container.innerHTML = conv.map(msg => {
+    const html = conv.map(msg => {
       const isAi = msg.isAiGenerated;
       const bubbleClass = msg.fromMe ? (isAi ? 'ai-generated' : 'outgoing') : 'incoming';
 
@@ -1161,9 +1409,20 @@ const App = (() => {
       `;
     }).join('');
 
-    container.scrollTop = container.scrollHeight;
-  }
+    const newHTML = html;
 
+    // Check if user is scrolled near bottom
+    const isScrolledToBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+    
+    // Only update DOM if HTML changed
+    if (container.innerHTML !== newHTML) {
+      container.innerHTML = newHTML;
+      // Maintain scroll position or scroll to bottom if they were already there
+      if (isScrolledToBottom || container.scrollTop === 0) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+  }
   async function sendChatMessage() {
     const input = document.getElementById('chatInputText');
     const text = input?.value?.trim();
@@ -1178,15 +1437,17 @@ const App = (() => {
     }
 
     try {
+      const selectedSelectInstance = document.getElementById('chatInstanceSelect')?.value || selectedChatInstance;
+      
       if (attachment) {
         showToast('Enviando arquivo...', 'info');
         await WhatsAppDirect.sendMediaMessage(selectedChatJid, attachment.base64Data, attachment.mimeType, text, {
-          instanceId: selectedChatInstance
+          instanceId: selectedSelectInstance
         });
         showToast('Mídia enviada!', 'success');
       } else {
         await WhatsAppDirect.sendMessage(selectedChatJid, text, {
-          instanceId: selectedChatInstance
+          instanceId: selectedSelectInstance
         });
         showToast('Mensagem enviada!', 'success');
       }
@@ -1199,8 +1460,9 @@ const App = (() => {
   async function sendChatMessageDirect(text) {
     if (!text || !selectedChatJid) return;
     try {
+      const selectedSelectInstance = document.getElementById('chatInstanceSelect')?.value || selectedChatInstance;
       await WhatsAppDirect.sendMessage(selectedChatJid, text, {
-        instanceId: selectedChatInstance
+        instanceId: selectedSelectInstance
       });
       showToast('Sugestão enviada!', 'success');
       setTimeout(() => refreshInbox(), 1000);

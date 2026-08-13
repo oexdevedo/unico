@@ -8,11 +8,12 @@
     "createdAt": "2026-08-10T09:39:59.344Z"
   },
   {
-    "id": "inst_1786389669114",
-    "name": "Sabrina",
-    "color": "#3b82f6",
-    "authFolder": "inst_inst_1786389669114",
+    "id": "inst_1786551779257",
+    "name": "atendimento(Sabrina)",
+    "color": "#ef4444",
+    "authFolder": "inst_inst_1786551779257",
     "isDefault": false,
-    "createdAt": "2026-08-10T19:21:09.114Z"
+    "disabled": false,
+    "createdAt": "2026-08-12T16:22:59.257Z"
   }
 ]
