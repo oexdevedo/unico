@@ -83,6 +83,13 @@
           <span class="badge-count badge-count-ia" style="position: absolute; top: 0; right: 0;">3</span>
         </button>
 
+        <!-- Teste A/B -->
+        <button class="tab-btn" data-tab="tab-ab-test" id="navABTest" title="Teste A/B" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path>
+          </svg>
+        </button>
+
       </nav>
 
       <div class="sidebar-footer" style="padding: 24px 0; display: flex; justify-content: center;">
@@ -1129,6 +1136,104 @@
         </div>
 
         <!-- ============================================================ -->
+        <!-- TAB: TESTE A/B -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-ab-test">
+          <div class="tab-panel-header">
+            <h2>📊 Teste A/B (Grupos e Listas)</h2>
+            <p>Compare o engajamento e a conversão entre diferentes listas de contatos.</p>
+          </div>
+
+          <div class="grid-2">
+            <!-- Grupo A -->
+            <div class="card" style="border-top: 4px solid var(--primary-color);">
+              <div class="card-header">
+                <h3>Grupo A</h3>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">Selecione a Lista / Tag</label>
+                  <select class="form-input" id="abTestGroupA">
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+                
+                <div class="stats-grid" style="margin-top: 20px;">
+                  <div class="stat-card">
+                    <div class="stat-title">Total de Contatos</div>
+                    <div class="stat-value" id="abStatsTotalA">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-title">Contatos Quentes (Verde)</div>
+                    <div class="stat-value text-success" id="abStatsHotA">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-title">Taxa de Conversão</div>
+                    <div class="stat-value text-primary" id="abStatsConvA">0%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Grupo B -->
+            <div class="card" style="border-top: 4px solid var(--warning-color);">
+              <div class="card-header">
+                <h3>Grupo B</h3>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">Selecione a Lista / Tag</label>
+                  <select class="form-input" id="abTestGroupB">
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+
+                <div class="stats-grid" style="margin-top: 20px;">
+                  <div class="stat-card">
+                    <div class="stat-title">Total de Contatos</div>
+                    <div class="stat-value" id="abStatsTotalB">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-title">Contatos Quentes (Verde)</div>
+                    <div class="stat-value text-success" id="abStatsHotB">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-title">Taxa de Conversão</div>
+                    <div class="stat-value text-warning" id="abStatsConvB">0%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comparação Visual -->
+          <div class="card mt-4">
+            <div class="card-header">
+              <h3>Comparação de Conversão</h3>
+            </div>
+            <div class="card-body">
+              <div style="margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <span style="font-weight: 500;">Grupo A</span>
+                  <span id="abBarTextA" style="font-weight: bold; color: var(--primary-color);">0%</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 8px; height: 16px; width: 100%; overflow: hidden;">
+                  <div id="abBarFillA" style="background: var(--primary-color); height: 100%; width: 0%; transition: width 0.5s ease;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <span style="font-weight: 500;">Grupo B</span>
+                  <span id="abBarTextB" style="font-weight: bold; color: var(--warning-color);">0%</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 8px; height: 16px; width: 100%; overflow: hidden;">
+                  <div id="abBarFillB" style="background: var(--warning-color); height: 100%; width: 0%; transition: width 0.5s ease;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- TAB: CONFIGURAÇÕES -->
         <!-- ============================================================ -->
         <div class="tab-panel" id="tab-settings">
@@ -1478,6 +1583,7 @@
   <!-- SCRIPTS -->
   <!-- ================================================================== -->
   <script src="js/supabase.js?v=2"></script>
+  <script src="js/ab-test.js?v=1"></script>
   <!-- Modal Criar/Editar Agente de IA com Template Estruturado -->
   <div class="modal-overlay" id="agentModal">
     <div class="modal-box" style="max-width:780px; max-height:92vh; overflow-y:auto;">

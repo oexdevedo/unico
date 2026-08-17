@@ -20,6 +20,7 @@ const App = (() => {
     // Initialize modules
     SupabaseModule.init();
     WhatsAppDirect.init();
+    if (window.ABTestModule) ABTestModule.init();
 
     // Setup event listeners
     setupThemeToggle();
