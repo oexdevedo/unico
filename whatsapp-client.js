@@ -175,7 +175,9 @@ async function initInstance(config) {
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 60000,
       keepAliveIntervalMs: 10000,
-      generateHighQualityLinkPreview: false
+      generateHighQualityLinkPreview: false,
+      syncFullHistory: false,
+      markOnlineOnConnect: true
     });
 
     runtime.sock = sock;
@@ -212,9 +214,15 @@ async function initInstance(config) {
 
         if (shouldReconnect) {
           runtime.status = 'connecting';
+          runtime.reconnectAttempts = (runtime.reconnectAttempts || 0) + 1;
+          const delay = Math.min(runtime.reconnectAttempts * 3000, 30000);
+          console.log(`⏳ [${config.name}] Reconectando em ${delay/1000}s (Tentativa ${runtime.reconnectAttempts})...`);
           setTimeout(() => {
-            if (runtimeInstances.has(instanceId)) initInstance(config);
-          }, 3000);
+            if (runtimeInstances.has(instanceId)) {
+              try { if (runtime.sock) runtime.sock.end(new Error('Reconnecting')); } catch (e) {}
+              initInstance(config);
+            }
+          }, delay);
         } else {
           runtime.status = 'disconnected';
           clearAuthFiles(authDir);
