@@ -709,8 +709,21 @@ const App = (() => {
       });
     }
 
+    // Scheduling State
+    let campaignScheduleTimeout = null;
+
     // Start Campaign
     document.getElementById('btnStartCampaign')?.addEventListener('click', startCampaign);
+    document.getElementById('btnCancelSchedule')?.addEventListener('click', () => {
+      if (campaignScheduleTimeout) {
+        clearTimeout(campaignScheduleTimeout);
+        campaignScheduleTimeout = null;
+      }
+      document.getElementById('btnStartCampaign').style.display = 'inline-flex';
+      document.getElementById('btnCancelSchedule').style.display = 'none';
+      document.getElementById('campaignProgressBox').style.display = 'none';
+      showToast('Agendamento cancelado', 'info');
+    });
     document.getElementById('btnPauseCampaign')?.addEventListener('click', () => DispatcherModule.pauseCampaign());
     document.getElementById('btnStopCampaign')?.addEventListener('click', () => {
       if (confirm('Tem certeza que deseja parar a campanha?')) DispatcherModule.stopCampaign();
@@ -813,23 +826,59 @@ const App = (() => {
 
     if (!confirm(`Disparar para ${contacts.length} contatos da lista "${sourceName}"${mediaInfo}?\nDelay entre mensagens: ${delayMin}-${delayMax}s${batchInfo}`)) return;
 
-    try {
-      document.getElementById('btnStartCampaign').disabled = true;
-      await DispatcherModule.startDirectCampaign({
-        contacts,
-        template,
-        minDelay: delayMin,
-        maxDelay: delayMax,
-        batchSize,
-        batchPause,
-        updateSupabase,
-        instanceId,
-        mediaAttachment: currentDispatcherMedia
-      });
-      showToast('Campanha concluída com sucesso!', 'success');
-    } catch (err) {
-      showToast(`Erro na campanha: ${err.message}`, 'error');
+    const executeCampaign = async () => {
+      try {
+        document.getElementById('btnStartCampaign').disabled = true;
+        await DispatcherModule.startDirectCampaign({
+          contacts,
+          template,
+          minDelay: delayMin,
+          maxDelay: delayMax,
+          batchSize,
+          batchPause,
+          updateSupabase,
+          instanceId,
+          mediaAttachment: currentDispatcherMedia
+        });
+        showToast('Campanha concluída com sucesso!', 'success');
+      } catch (err) {
+        showToast(`Erro na campanha: ${err.message}`, 'error');
+      }
+    };
+
+    const scheduleInput = document.getElementById('campaignScheduleInput')?.value;
+    if (scheduleInput) {
+      const targetDate = new Date(scheduleInput).getTime();
+      const diffMs = targetDate - Date.now();
+      
+      if (diffMs > 0) {
+        const btnStart = document.getElementById('btnStartCampaign');
+        const btnCancel = document.getElementById('btnCancelSchedule');
+        
+        btnStart.style.display = 'none';
+        btnCancel.style.display = 'inline-flex';
+        
+        const statusTitle = document.getElementById('progressStatusTitle');
+        if (statusTitle) statusTitle.textContent = `⏳ Agendado para ${new Date(targetDate).toLocaleString('pt-BR')}`;
+        
+        const progressBox = document.getElementById('campaignProgressBox');
+        if (progressBox) progressBox.style.display = 'block';
+
+        showToast('Campanha agendada! Mantenha esta aba aberta.', 'info');
+        
+        campaignScheduleTimeout = setTimeout(async () => {
+          btnCancel.style.display = 'none';
+          btnStart.style.display = 'none';
+          if (statusTitle) statusTitle.textContent = 'Iniciando campanha agendada...';
+          await executeCampaign();
+        }, diffMs);
+        return;
+      } else {
+        if (!confirm('A data informada já passou. Deseja iniciar a campanha agora mesmo?')) return;
+      }
     }
+
+    await executeCampaign();
   }
 
   // ========================================================================
