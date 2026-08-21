@@ -726,8 +726,21 @@ async function resolveJid(target, sock = null) {
   return `${digits}@s.whatsapp.net`;
 }
 
-async function sendTextMessage(phone, text, options = {}) {
+// Função para processar Spintax: {Oi|Olá|Opa} -> sorteia uma
+function processSpintax(text) {
+  if (!text) return text;
+  const spintaxRegex = /{([^{}]+)}/g;
+  return text.replace(spintaxRegex, (match, contents) => {
+    const choices = contents.split('|');
+    return choices[Math.floor(Math.random() * choices.length)];
+  });
+}
+
+async function sendTextMessage(phone, rawText, options = {}) {
   let targetInstance = null;
+
+  // Aplica Spintax antes de tudo
+  const text = processSpintax(rawText);
 
   if (options.instanceId === 'round-robin') {
     const rr = getNextRoundRobinInstance();
@@ -760,16 +773,28 @@ async function sendTextMessage(phone, text, options = {}) {
   console.log(`📤 [${config.name}] Enviando para: ${phone} (JID: ${jid})`);
 
   try {
-    // Simula digitação se solicitado
+    // Simula digitação realista orgânica baseada no tamanho do texto
     if (options.simulateTyping) {
       try {
+        const charDelay = 60 + Math.random() * 20; // 60 a 80ms por caractere
+        const calculatedDelay = Math.min(Math.max(text.length * charDelay, 1500), 12000); // Mín 1.5s, Máx 12s
+        
+        // Pausa humana orgânica ANTES de começar a digitar
+        await new Promise(r => setTimeout(r, 500 + Math.random() * 1500));
+        
         await sock.sendPresenceUpdate('composing', jid);
-        await new Promise(r => setTimeout(r, 1500 + Math.random() * 2000));
+        await new Promise(r => setTimeout(r, calculatedDelay));
         await sock.sendPresenceUpdate('paused', jid);
       } catch (e) { /* ignore */ }
     }
 
-    const res = await sock.sendMessage(jid, { text });
+    // Estrutura de mensagem com bloqueio opcional de preview
+    const msgContent = { text };
+    if (options.disableLinkPreview) {
+      msgContent.linkPreview = null; 
+    }
+
+    const res = await sock.sendMessage(jid, msgContent);
     const sentPhone = jid.split('@')[0];
     const timestampIso = new Date().toISOString();
 
@@ -853,12 +878,30 @@ async function sendMediaMessage(phone, base64Data, mimeType, caption, options = 
   const jid = await resolveJid(phone, sock);
   if (!jid) throw new Error(`Número inválido ou sem WhatsApp: ${phone}`);
 
+  // Aplica Spintax ao caption (texto do anexo)
+  const finalCaption = caption ? processSpintax(caption) : '';
+
   try {
+    // Simula presença (digitando ou gravando)
     if (options.simulateTyping !== false) {
       try {
         await sock.presenceSubscribe(jid);
-        await sock.sendPresenceUpdate('recording', jid);
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Pausa humana orgânica ANTES
+        await new Promise(r => setTimeout(r, 500 + Math.random() * 1500));
+
+        if (mimeType.startsWith('audio/')) {
+          const recordDelay = 3000 + Math.random() * 4000; // 3 a 7 segundos simulando gravação
+          await sock.sendPresenceUpdate('recording', jid);
+          await new Promise(resolve => setTimeout(resolve, recordDelay));
+        } else {
+          const chars = finalCaption.length > 0 ? finalCaption.length : 10;
+          const charDelay = 60 + Math.random() * 20;
+          const calculatedDelay = Math.min(Math.max(chars * charDelay, 1500), 10000);
+          await sock.sendPresenceUpdate('composing', jid);
+          await new Promise(resolve => setTimeout(resolve, calculatedDelay));
+        }
+        
         await sock.sendPresenceUpdate('paused', jid);
       } catch (e) { /* ignore */ }
     }
@@ -867,9 +910,37 @@ async function sendMediaMessage(phone, base64Data, mimeType, caption, options = 
     let messagePayload = {};
 
     if (mimeType.startsWith('image/')) {
-      messagePayload = { image: buffer, caption: caption || '' };
+      messagePayload = { image: buffer, caption: finalCaption };
+      if (options.disableLinkPreview) messagePayload.linkPreview = null;
     } else if (mimeType.startsWith('audio/')) {
-      messagePayload = { audio: buffer, mimetype: mimeType, ptt: true };
+      const fs = require('fs');
+      const path = require('path');
+      const os = require('os');
+      const { execFileSync } = require('child_process');
+      
+      const tmpIn = path.join(os.tmpdir(), `audio_in_${Date.now()}.webm`);
+      const tmpOut = path.join(os.tmpdir(), `audio_out_${Date.now()}.ogg`);
+      
+      try {
+        fs.writeFileSync(tmpIn, buffer);
+        // Converter para OGG Opus (formato exigido pelo WhatsApp para PTT)
+        execFileSync('ffmpeg', [
+          '-y', '-i', tmpIn,
+          '-c:a', 'libopus',
+          '-b:a', '64k',
+          '-vbr', 'on',
+          tmpOut
+        ], { stdio: 'ignore' });
+        
+        const oggBuffer = fs.readFileSync(tmpOut);
+        messagePayload = { audio: oggBuffer, mimetype: 'audio/ogg; codecs=opus', ptt: true };
+      } catch (err) {
+        console.error('Erro na conversão do FFmpeg:', err);
+        messagePayload = { audio: buffer, mimetype: mimeType, ptt: true }; // Fallback
+      } finally {
+        try { fs.unlinkSync(tmpIn); } catch (e) {}
+        try { fs.unlinkSync(tmpOut); } catch (e) {}
+      }
     } else if (mimeType.startsWith('video/')) {
       messagePayload = { video: buffer, caption: caption || '' };
     } else if (mimeType.includes('webp')) {

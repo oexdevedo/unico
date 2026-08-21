@@ -12,6 +12,11 @@ const crypto = require('crypto');
 const whatsappClient = require('./whatsapp-client');
 const aiClient = require('./ai-client');
 
+// Configura o caminho do FFmpeg para o Baileys conseguir enviar Áudios (PTT)
+const ffmpegStatic = require('ffmpeg-static');
+process.env.FFMPEG_PATH = ffmpegStatic;
+process.env.PATH = path.dirname(ffmpegStatic) + path.delimiter + process.env.PATH;
+
 const PORT = process.env.PORT || 4444;
 
 // ============================================================================
@@ -736,7 +741,8 @@ const server = http.createServer(async (req, res) => {
         contactName: payload.contactName,
         contactId: payload.contactId,
         campaignId: payload.campaignId,
-        simulateTyping: payload.simulateTyping
+        simulateTyping: payload.simulateTyping,
+        disableLinkPreview: payload.disableLinkPreview
       });
       return json(res, result);
     }
@@ -755,7 +761,8 @@ const server = http.createServer(async (req, res) => {
         contactName: payload.contactName,
         contactId: payload.contactId,
         campaignId: payload.campaignId,
-        simulateTyping: payload.simulateTyping
+        simulateTyping: payload.simulateTyping,
+        disableLinkPreview: payload.disableLinkPreview
       });
       return json(res, result);
     }
@@ -1156,7 +1163,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, async () => {
   console.log(`\n======================================================`);
   console.log(`🚀 Unico — CRM WhatsApp Multi-Agentes`);
-  console.log(`🌐 http://localhost:${PORT}`);
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log(`======================================================\n`);
 
   await whatsappClient.initWhatsApp();

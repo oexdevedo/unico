@@ -127,7 +127,8 @@ const DispatcherModule = (() => {
             contactName: contact.displayName || contact.name,
             contactId: contact.id,
             campaignId,
-            simulateTyping: true
+            simulateTyping: true,
+            disableLinkPreview: true
           });
         } else {
           sendResult = await WhatsAppDirect.sendMessage(targetPhone, parsedText, {
@@ -135,7 +136,8 @@ const DispatcherModule = (() => {
             contactName: contact.displayName || contact.name,
             contactId: contact.id,
             campaignId,
-            simulateTyping: true
+            simulateTyping: true,
+            disableLinkPreview: true
           });
         }
 

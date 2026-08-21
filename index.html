@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body class="dark-theme">
+<body>
   <div id="app" class="app-shell">
     <!-- ================================================================== -->
     <!-- SIDEBAR -->
@@ -207,105 +207,122 @@
           <!-- Bento Grid -->
           <div class="dashboard-bento-grid">
             
-            <!-- Col 1: Campanhas e Universal -->
+            <!-- Col 1: Status Conexão e IA -->
             <div class="bento-col">
-              <!-- Campanhas -->
-              <div class="card" style="flex: 1; border-radius: 32px; padding: 12px;">
+              <!-- Dark Card (Instância) -->
+              <div class="card" style="border-radius: var(--border-radius-lg); background: var(--brand-primary); color: #fff;">
+                <div class="card-header flex-between" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                  <h3 style="color: #fff;">Status WhatsApp</h3>
+                  <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 8px;">Conectado</span>
+                </div>
+                <div class="card-body">
+                  <h1 style="font-size: 2.2rem; color: #fff; font-weight: 800; margin-bottom: 8px;">1 Instância</h1>
+                  <p style="color: rgba(255,255,255,0.8);">WhatsApp Web V2</p>
+                  <div class="flex-between" style="margin-top: 24px; font-size: 0.9rem; color: rgba(255,255,255,0.9);">
+                     <span>Bateria: <i class="ti ti-battery-4"></i> 100%</span>
+                     <span>Ping: 12ms</span>
+                  </div>
+                  <button class="btn mt-4" style="width:100%; background: #fff; color: var(--brand-primary); border-radius: 999px; font-weight: bold;">Gerenciar Conexão</button>
+                </div>
+              </div>
+              
+              <!-- IA Card -->
+              <div class="card mt-4" style="border-radius: var(--border-radius-lg);">
+                <div class="card-header">
+                  <h3 style="font-weight: 800;">Copiloto IA</h3>
+                </div>
+                <div class="card-body">
+                  <div class="flex-between mb-4">
+                    <span class="text-muted">Agente Ativo:</span>
+                    <span class="badge" style="background: var(--brand-primary-light); color: #fff;"><i class="ti ti-robot"></i> Vendedor</span>
+                  </div>
+                  <div class="flex-between mb-4">
+                    <span class="text-muted">Conversas hoje:</span>
+                    <strong style="font-size: 1.2rem;">47</strong>
+                  </div>
+                  <button class="btn btn-outline" style="width: 100%; border-radius: 999px;" onclick="window.switchTab('tab-ai')">Ver Inteligência</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 2: Visão Geral e Métricas -->
+            <div class="bento-col">
+              <!-- Contatos Resumo -->
+              <div class="card" style="border-radius: var(--border-radius-lg); padding: 12px;">
                 <div class="card-header flex-between">
-                  <h3 style="font-weight: 800;">Campanhas Recentes</h3>
-                  <span class="badge" style="background: #000; color: #fff; border-radius: 999px;">Visualizar tudo</span>
+                  <h3 style="font-weight: 800;">Base de Contatos</h3>
+                  <button class="btn btn-sm btn-ghost" onclick="window.switchTab('tab-contacts')">Ver Base</button>
+                </div>
+                <div class="card-body text-center">
+                  <h1 style="font-size: 3rem; font-weight: 800; color: var(--text-primary);">424</h1>
+                  <p class="text-muted">Contatos cadastrados no sistema</p>
+                  
+                  <div style="display: flex; gap: 16px; justify-content: center; margin-top: 24px;">
+                    <div style="text-align: center;">
+                      <div style="font-size: 1.2rem; font-weight: bold; color: var(--color-success);">419</div>
+                      <div style="font-size: 0.8rem; color: var(--text-muted);">Com WhatsApp</div>
+                    </div>
+                    <div style="text-align: center;">
+                      <div style="font-size: 1.2rem; font-weight: bold; color: var(--color-danger);">423</div>
+                      <div style="font-size: 0.8rem; color: var(--text-muted);">Status Vermelho</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Métricas Grid Interno -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-top: var(--space-4);" id="dashboardMetricsGrid">
+                <div class="metric-card" style="--accent: var(--brand-primary); border-radius: 24px; background: var(--bg-surface-raised); border: 1px solid var(--border-color);">
+                   <div class="metric-card-header"><span class="metric-icon" style="color: var(--brand-primary);"><i class="ti ti-send"></i></span><span class="metric-label" style="font-weight:bold;">Enviadas</span></div>
+                   <div class="metric-value">1.2k</div>
+                </div>
+                <div class="metric-card" style="--accent: var(--color-success); border-radius: 24px; background: var(--bg-surface-raised); border: 1px solid var(--border-color);">
+                   <div class="metric-card-header"><span class="metric-icon" style="color: var(--color-success);"><i class="ti ti-checks"></i></span><span class="metric-label" style="font-weight:bold;">Entregues</span></div>
+                   <div class="metric-value">1.1k</div>
+                </div>
+                <div class="metric-card" style="--accent: var(--color-info); border-radius: 24px; background: var(--bg-surface-raised); border: 1px solid var(--border-color);">
+                   <div class="metric-card-header"><span class="metric-icon" style="color: var(--color-info);"><i class="ti ti-message-reply"></i></span><span class="metric-label" style="font-weight:bold;">Respostas</span></div>
+                   <div class="metric-value">342</div>
+                </div>
+                <div class="metric-card" style="--accent: var(--color-danger); border-radius: 24px; background: var(--bg-surface-raised); border: 1px solid var(--border-color);">
+                   <div class="metric-card-header"><span class="metric-icon" style="color: var(--color-danger);"><i class="ti ti-alert-circle"></i></span><span class="metric-label" style="font-weight:bold;">Falhas</span></div>
+                   <div class="metric-value">12</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 3: Ações e Campanhas -->
+            <div class="bento-col">
+              <!-- Ações Rápidas -->
+              <div class="card" style="border-radius: var(--border-radius-lg); padding: 12px;">
+                <div class="card-header">
+                  <h3 style="font-weight: 800;">Disparo Rápido</h3>
+                </div>
+                <div class="card-body text-center">
+                  <input type="text" class="input-field" placeholder="Número com DDD..." style="text-align: center; border-radius: 999px; margin-bottom: 12px; font-weight: bold; background: var(--bg-surface-raised);">
+                  <button class="btn btn-primary" style="width:100%; border-radius: 999px; font-weight: bold;"><i class="ti ti-send"></i> Enviar Mensagem</button>
+                </div>
+              </div>
+              
+              <!-- Campanhas -->
+              <div class="card mt-4" style="flex: 1; border-radius: var(--border-radius-lg); padding: 12px;">
+                <div class="card-header flex-between">
+                  <h3 style="font-weight: 800;">Campanhas</h3>
+                  <span class="badge" style="background: var(--bg-surface-raised); color: var(--text-primary); border-radius: 999px; cursor: pointer;" onclick="window.switchTab('tab-dispatcher')">Ver todas</span>
                 </div>
                 <div class="card-body" style="padding:0">
-                  <div class="table-container">
+                  <div class="table-container" style="max-height: 200px; overflow-y: auto;">
                     <table style="border:none;">
-                      <thead><tr><th>Campanha</th><th>Data</th><th>Status</th></tr></thead>
-                      <tbody id="campaignsTableBody"><tr><td colspan="3" class="text-center text-muted py-8">Carregando...</td></tr></tbody>
+                      <thead><tr><th>Nome</th><th>Data</th><th>Status</th></tr></thead>
+                      <tbody id="campaignsTableBody"><tr><td colspan="3" class="text-center text-muted py-8">Nenhuma campanha recente...</td></tr></tbody>
                     </table>
                   </div>
                 </div>
               </div>
-              
-              <!-- Dark Card (Universal / Instâncias) -->
-              <div class="card bento-card-dark" style="border-radius: 32px;">
-                <div class="card-header flex-between">
-                  <h3>Instâncias</h3>
-                  <span style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px;">Status</span>
-                </div>
-                <div class="card-body">
-                  <h1 style="font-size: 2.5rem; color: #fff; font-weight: 800;">1 Ativa</h1>
-                  <p style="color: var(--brand-primary); margin-top: 8px;">WhatsApp Web V2</p>
-                  
-                  <div class="flex-between" style="margin-top: 24px; font-size: 0.9rem;">
-                     <span>Bateria: 100%</span>
-                     <span>Ping: 12ms</span>
-                  </div>
-                  <button class="btn" style="width:100%; margin-top: 24px; background: #fff; color: #000; border-radius: 999px;">+ Add Instância</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Col 2: Status Chart e Métricas -->
-            <div class="bento-col">
-              <!-- Chart -->
-              <div class="card" style="border-radius: 32px; padding: 12px;">
-                <div class="card-header flex-between">
-                  <h3 style="font-weight: 800;">Engajamento</h3>
-                  <select class="input-field" style="width: auto; padding: 4px 12px; border-radius: 12px; font-weight: bold;"><option>Hoje</option></select>
-                </div>
-                <div class="card-body" id="contactStatusChart"><p class="text-muted">Carregando...</p></div>
-              </div>
-              
-              <!-- Métricas Grid Interno -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);" id="dashboardMetricsGrid">
-                <div class="metric-card" style="--accent: var(--brand-primary); border-radius: 24px; background: var(--brand-primary); border: none;">
-                   <div class="metric-card-header"><span class="metric-icon"></span><span class="metric-label" style="font-weight:bold; color:#000;">Enviadas</span></div>
-                   <div class="metric-value" style="color:#000;">—</div>
-                </div>
-                <div class="metric-card" style="--accent: #000; border-radius: 24px; background: #000; border: none;">
-                   <div class="metric-card-header"><span class="metric-icon"></span><span class="metric-label" style="font-weight:bold; color:#fff;">Entregues</span></div>
-                   <div class="metric-value" style="color:#fff;">—</div>
-                </div>
-                <div class="metric-card" style="--accent: #333; border-radius: 24px; background: #222; border: none;">
-                   <div class="metric-card-header"><span class="metric-icon"></span><span class="metric-label" style="font-weight:bold; color:#fff;">Respostas</span></div>
-                   <div class="metric-value" style="color:#fff;">—</div>
-                </div>
-                <div class="metric-card" style="--accent: #f59e0b; border-radius: 24px;">
-                   <div class="metric-card-header"><span class="metric-icon"></span><span class="metric-label" style="font-weight:bold; color:#000;">Falhas</span></div>
-                   <div class="metric-value" style="color:#000;">—</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Col 3: Ações e Lime Card -->
-            <div class="bento-col">
-              <!-- Ações Rápidas -->
-              <div class="card" style="border-radius: 32px; padding: 12px;">
-                <div class="card-header">
-                  <h3 style="font-weight: 800;">Ações Rápidas</h3>
-                </div>
-                <div class="card-body text-center">
-                  <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 24px;">
-                    <div style="width:40px; height:40px; border-radius:50%; background:var(--brand-primary); display:flex; align-items:center; justify-content:center; color:#000; font-weight:bold;">A</div>
-                    <div style="width:40px; height:40px; border-radius:50%; background:#222; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold;">B</div>
-                    <div style="width:40px; height:40px; border-radius:50%; border: 2px dashed #ccc; display:flex; align-items:center; justify-content:center; color:#000; font-weight:bold;">+</div>
-                  </div>
-                  <input type="text" class="input-field" placeholder="Número..." style="text-align: center; border-radius: 999px; margin-bottom: 12px; font-weight: bold;">
-                  <button class="btn" style="width:100%; background: #000; color: var(--brand-primary); border-radius: 999px; font-weight: bold;">Enviar</button>
-                </div>
-              </div>
-              
-              <!-- Lime Card -->
-              <div class="card bento-card-lime" style="border-radius: 32px; flex: 1;">
-                <div class="card-body">
-                  <h3>How to reduce blocks by 25%?</h3>
-                  <p style="margin-bottom: 24px; font-weight: 600;">Use nossos Agentes IA de aquecimento em 2ª plano para evitar banimentos.</p>
-                  <button class="btn btn-sm" style="font-weight: bold;">Learn more</button>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
+            </div> <!-- End bento-col 3 -->
+            
+          </div> <!-- End dashboard-bento-grid -->
+        </div> <!-- End tab-dashboard -->
 
         <!-- ============================================================ -->
         <!-- TAB: INBOX & CHAT -->
@@ -1624,22 +1641,22 @@
             <div class="grid-3 gap-3 mb-3">
               <div style="grid-column: span 2;">
                 <label class="form-label" style="font-size:12px; font-weight:600;">Nome do Agente *</label>
-                <input type="text" id="agentName" class="form-input" required placeholder="Ex: Assistente Atacama, Luna TechStore, Consultor Financeiro...">
+                <input type="text" id="agentName" class="form-input" placeholder="Ex: Assistente Atacama, Luna TechStore, Consultor Financeiro...">
               </div>
               <div>
                 <label class="form-label" style="font-size:12px; font-weight:600;">Ícone (Emoji) *</label>
-                <input type="text" id="agentIcon" class="form-input" required placeholder="Ex: 🧠" maxlength="5" value="🤖">
+                <input type="text" id="agentIcon" class="form-input" placeholder="Ex: 🧠" maxlength="5" value="🤖">
               </div>
             </div>
 
             <div class="grid-2 gap-3 mb-3">
               <div>
                 <label class="form-label" style="font-size:12px; font-weight:600;">Função Principal (1-2 frases) *</label>
-                <textarea id="agentRole" class="form-textarea" rows="2" required placeholder="Ex: Dar suporte técnico de nível 1 sobre o software X e orientar novos clientes."></textarea>
+                <textarea id="agentRole" class="form-textarea" rows="2" placeholder="Ex: Dar suporte técnico de nível 1 sobre o software X e orientar novos clientes."></textarea>
               </div>
               <div>
                 <label class="form-label" style="font-size:12px; font-weight:600;">Objetivo Final da Interação *</label>
-                <textarea id="agentGoal" class="form-textarea" rows="2" required placeholder="Ex: Resolver a dúvida do usuário de forma acolhedora ou direcionar para um atendente humano."></textarea>
+                <textarea id="agentGoal" class="form-textarea" rows="2" placeholder="Ex: Resolver a dúvida do usuário de forma acolhedora ou direcionar para um atendente humano."></textarea>
               </div>
             </div>
 
@@ -1777,7 +1794,7 @@
 
           <div class="modal-footer flex-between" style="padding-top:10px;">
             <button type="button" class="crx-btn crx-btn-ghost" onclick="closeAgentModal()">Cancelar</button>
-            <button type="submit" class="crx-btn crx-btn-primary"><i class="ti ti-check"></i> Salvar Agente de IA</button>
+            <button type="button" class="crx-btn crx-btn-primary" onclick="saveAgent(event)"><i class="ti ti-check"></i> Salvar Agente de IA</button>
           </div>
         </form>
       </div>
@@ -1909,7 +1926,7 @@
   <script src="js/contacts-agenda.js?v=2"></script>
   <script src="js/lists.js?v=1"></script>
   <script src="js/logs.js?v=1"></script>
-  <script src="js/app.js?v=2"></script>
+  <script src="js/app.js?v=3"></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.21.3/index.js"></script>
 </body>
 </html>

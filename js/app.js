@@ -2417,14 +2417,22 @@ window.deleteAgent = async function(id) {
 };
 
 window.saveAgent = async function(e) {
-  e.preventDefault();
+  if (e) e.preventDefault();
   
-  const idInput = document.getElementById('agentId').value;
-  const name = document.getElementById('agentName').value.trim();
-  if (!name) return showToast('Nome do agente é obrigatório.', 'warning');
+  try {
+    const idInput = document.getElementById('agentId').value;
+    const nameInput = document.getElementById('agentName');
+    
+    if (!nameInput) {
+      return showToast('Erro interno: Campo de nome não encontrado.', 'error');
+    }
+    
+    const name = nameInput.value.trim();
+    if (!name) return showToast('Nome do agente é obrigatório.', 'warning');
 
-  const isEdit = !!idInput;
-  const agentId = isEdit ? idInput : name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const isEdit = !!idInput;
+    const agentId = isEdit ? idInput : name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
   
   const structuredFields = {
     name,
@@ -2457,7 +2465,6 @@ window.saveAgent = async function(e) {
     structuredFields
   };
   
-  try {
     const res = await fetch('/api/ai/agents', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2470,11 +2477,12 @@ window.saveAgent = async function(e) {
       refreshAIPanel();
     } else {
       const errData = await res.json();
+      alert('Erro ao salvar agente: ' + (errData.error || 'Erro desconhecido'));
       showToast('Erro ao salvar agente: ' + (errData.error || 'Erro desconhecido'), 'error');
     }
   } catch (err) {
-    console.error('Erro ao salvar agente', err);
-    showToast('Erro ao salvar agente: ' + err.message, 'error');
+    console.error('Erro GERAL ao salvar agente:', err);
+    alert('Erro CRÍTICO no JavaScript:\n\n' + err.message + '\n\n' + err.stack);
   }
 };
 

@@ -102,6 +102,7 @@ const WhatsAppDirect = (() => {
         contactId: options.contactId,
         campaignId: options.campaignId,
         simulateTyping: options.simulateTyping,
+        disableLinkPreview: options.disableLinkPreview,
         isAi: options.isAi,
         agentName: options.agentName
       })
@@ -122,7 +123,8 @@ const WhatsAppDirect = (() => {
         contactId: options.contactId,
         campaignId: options.campaignId,
         instanceId: options.instanceId,
-        simulateTyping: options.simulateTyping
+        simulateTyping: options.simulateTyping,
+        disableLinkPreview: options.disableLinkPreview
       })
     });
     const data = await res.json();

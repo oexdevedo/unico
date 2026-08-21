@@ -5,15 +5,7 @@
     "color": "#10b981",
     "authFolder": "auth_info_baileys",
     "isDefault": true,
-    "createdAt": "2026-08-10T09:39:59.344Z"
-  },
-  {
-    "id": "inst_1786551779257",
-    "name": "atendimento(Sabrina)",
-    "color": "#ef4444",
-    "authFolder": "inst_inst_1786551779257",
-    "isDefault": false,
     "disabled": false,
-    "createdAt": "2026-08-12T16:22:59.257Z"
+    "createdAt": "2026-08-21T18:11:38.645Z"
   }
 ]
