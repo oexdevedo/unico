@@ -23,6 +23,7 @@ const pino = require('pino');
 const QRCode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
+const NodeCache = require('node-cache');
 
 const INSTANCES_CONFIG_FILE = path.join(__dirname, 'whatsapp_instances.json');
 const MESSAGES_FILE = path.join(__dirname, 'received_messages.json');
@@ -148,7 +149,9 @@ async function initInstance(config) {
       rawQr: null,
       user: null,
       sock: null,
-      reconnectAttempts: 0
+      reconnectAttempts: 0,
+      msgRetryCounterCache: new NodeCache(),
+      userDevicesCache: new NodeCache()
     };
     runtimeInstances.set(instanceId, runtime);
   } else {
@@ -174,10 +177,12 @@ async function initInstance(config) {
       browser: Browsers.macOS('Desktop'),
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 60000,
-      keepAliveIntervalMs: 10000,
+      keepAliveIntervalMs: 30000,
       generateHighQualityLinkPreview: false,
       syncFullHistory: false,
-      markOnlineOnConnect: true
+      markOnlineOnConnect: false,
+      msgRetryCounterCache: runtime.msgRetryCounterCache,
+      userDevicesCache: runtime.userDevicesCache
     });
 
     runtime.sock = sock;
