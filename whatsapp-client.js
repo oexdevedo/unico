@@ -25,6 +25,13 @@ const fs = require('fs');
 const path = require('path');
 const NodeCache = require('node-cache');
 
+// Cache robusto para chaves de sinal (evita deslogar)
+const msgRetryCounterCache = new NodeCache({ stdTTL: 3600 });
+const userDevicesCache = new NodeCache({ stdTTL: 3600 });
+
+// Cache de JIDs para evitar rate-limit e quedas durante disparo em massa
+const jidCache = new NodeCache({ stdTTL: 86400 });
+
 const INSTANCES_CONFIG_FILE = path.join(__dirname, 'whatsapp_instances.json');
 const MESSAGES_FILE = path.join(__dirname, 'received_messages.json');
 const AUTH_INSTANCES_BASE = path.join(__dirname, 'auth_instances');
@@ -710,8 +717,15 @@ async function resolveJid(target, sock = null) {
 
   if (sock) {
     try {
+      const cacheKey = digits;
+      const cachedJid = jidCache.get(cacheKey);
+      if (cachedJid) return cachedJid;
+
       const check1 = await sock.onWhatsApp(digits);
-      if (check1?.[0]?.exists && check1[0]?.jid) return check1[0].jid;
+      if (check1?.[0]?.exists && check1[0]?.jid) {
+        jidCache.set(cacheKey, check1[0].jid);
+        return check1[0].jid;
+      }
 
       if (digits.startsWith('55')) {
         let altDigits = null;
@@ -722,7 +736,10 @@ async function resolveJid(target, sock = null) {
         }
         if (altDigits) {
           const check2 = await sock.onWhatsApp(altDigits);
-          if (check2?.[0]?.exists && check2[0]?.jid) return check2[0].jid;
+          if (check2?.[0]?.exists && check2[0]?.jid) {
+            jidCache.set(cacheKey, check2[0].jid);
+            return check2[0].jid;
+          }
         }
       }
     } catch (err) { /* ignore */ }
@@ -787,6 +804,7 @@ async function sendTextMessage(phone, rawText, options = {}) {
         // Pausa humana orgânica ANTES de começar a digitar
         await new Promise(r => setTimeout(r, 500 + Math.random() * 1500));
         
+        await sock.presenceSubscribe(jid).catch(() => {});
         await sock.sendPresenceUpdate('composing', jid);
         await new Promise(r => setTimeout(r, calculatedDelay));
         await sock.sendPresenceUpdate('paused', jid);

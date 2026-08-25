@@ -13,6 +13,98 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Tailwind for Settings Tab -->
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      corePlugins: { preflight: false },
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface": "#0b1515",
+            "tertiary": "#f7f8f8",
+            "on-tertiary": "#2f3131",
+            "secondary-fixed": "#c5eae9",
+            "on-tertiary-container": "#5e6060",
+            "on-tertiary-fixed-variant": "#454747",
+            "outline": "#849495",
+            "error": "#ffb4ab",
+            "secondary-container": "#2d4f4f",
+            "tertiary-container": "#dbdbdb",
+            "on-secondary-container": "#9bbfbf",
+            "primary-container": "#00f2ff",
+            "surface-container-high": "#222c2c",
+            "on-background": "#dae5e4",
+            "on-surface": "#dae5e4",
+            "on-secondary": "#123636",
+            "secondary-fixed-dim": "#a9cdcd",
+            "surface-bright": "#313b3b",
+            "inverse-primary": "#00696f",
+            "on-surface-variant": "#b9cacb",
+            "surface-container-lowest": "#061010",
+            "on-primary-fixed": "#002022",
+            "on-tertiary-fixed": "#1a1c1c",
+            "inverse-on-surface": "#283232",
+            "on-primary-container": "#006a71",
+            "surface-tint": "#00dbe7",
+            "surface-dim": "#0b1515",
+            "on-secondary-fixed-variant": "#2a4c4c",
+            "background": "#0b1515",
+            "border-glass": "rgba(255, 255, 255, 0.12)",
+            "surface-container": "#172121",
+            "inverse-surface": "#dae5e4",
+            "secondary": "#a9cdcd",
+            "primary-fixed": "#74f5ff",
+            "tertiary-fixed-dim": "#c6c6c7",
+            "outline-variant": "#3a494b",
+            "on-primary-fixed-variant": "#004f54",
+            "surface-container-highest": "#2c3737",
+            "primary": "#e1fdff",
+            "glow-cyan": "rgba(0, 242, 255, 0.4)",
+            "surface-variant": "#2c3737",
+            "on-secondary-fixed": "#002020",
+            "surface-container-low": "#131d1d",
+            "bg-deep-teal": "#0F1717",
+            "on-error": "#690005",
+            "primary-fixed-dim": "#00dbe7",
+            "surface-glass": "rgba(255, 255, 255, 0.05)",
+            "on-error-container": "#ffdad6",
+            "on-primary": "#00363a",
+            "error-container": "#93000a",
+            "tertiary-fixed": "#e2e2e2"
+          },
+          "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+          "spacing": { "container-padding": "24px", "margin-lg": "32px", "margin-sm": "8px", "margin-md": "16px", "panel-gap": "20px", "gutter": "16px" },
+          "fontFamily": {
+            "headline-xl": ["Sora"], "headline-lg": ["Sora"], "label-sm": ["Sora"], "title-md": ["Sora"], "body-lg": ["Sora"], "headline-lg-mobile": ["Sora"], "body-md": ["Sora"]
+          },
+          "fontSize": {
+            "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+            "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+            "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+    .material-symbols-outlined.filled { font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+    .recessed-glass { box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.4); }
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
+        50% { box-shadow: 0 0 25px rgba(0, 242, 255, 0.5); }
+    }
+    .active-pulse { animation: pulse-glow 3s infinite alternate; }
+  </style>
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -1272,83 +1364,119 @@
 
         <!-- TAB: CONFIGURAÇÕES -->
         <!-- ============================================================ -->
-        <div class="tab-panel" id="tab-settings">
-          <div class="tab-panel-header">
-            <h2>️ Configurações & Conexões</h2>
-            <p>Gerencie suas conexões WhatsApp, Supabase e Anything LLM.</p>
-          </div>
+        <div class="tab-panel bg-bg-deep-teal font-sans relative" id="tab-settings" style="min-height: 100%; border-radius: 12px; overflow: hidden; padding: 24px;">
+          <!-- Organic Background Texture -->
+          <div class="absolute inset-0 z-0 opacity-40 mix-blend-overlay pointer-events-none" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBfYH522c9VGOrQ1clp-IL5bR6YS4y7XJGo3di3uX3BYQ9EPMmQQxguZw1_-rkNfRuRXCAeDCf-Qk7S4kdNSnoDzIE3kk7ldjMUOTrmVk1qlamgZUm9uLwn_X9BgiHK7cZe18X4I50kwvTzCupLQRtBhyTKPliFKCpDF6Ru7FZjgqe9FBvKga2xnXCdoNFqjsfCb_t32YyEL3s2apYBnPPd2nSNEyloQd9CTbBNlPq6YWf7sf2oYE53'); background-size: cover;"></div>
 
-          <!-- WhatsApp Instances -->
-          <div class="card mb-4">
-            <div class="card-header flex-between">
-              <h3>Instâncias WhatsApp (Baileys)</h3>
-              <button class="btn btn-sm btn-primary" id="btnAddInstance">+ Nova Linha</button>
-            </div>
-            <div class="card-body">
-              <div id="instancesGrid" class="grid-3">
-                <div class="text-center text-muted py-8">Carregando instâncias...</div>
+          <div class="flex flex-col gap-8 z-10 relative">
+            <!-- Header -->
+            <header class="flex justify-between items-end shrink-0 pt-2">
+              <div>
+                <h1 class="font-headline-xl text-headline-xl text-on-surface m-0">Configurações</h1>
+                <p class="font-body-md text-body-md text-on-surface-variant mt-1 m-0">Gerencie suas conexões WhatsApp, Supabase e Anything LLM.</p>
               </div>
-            </div>
-          </div>
+            </header>
 
-          <!-- Connection Settings -->
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-header"><h3>️ Supabase (Raio X)</h3></div>
-              <div class="card-body">
-                <div class="form-group">
-                  <label class="form-label">URL do Projeto</label>
-                  <input type="text" class="form-input" id="settingsSupabaseUrl" value="https://iwpveyworwdymlzdmloq.supabase.co">
+            <!-- Bento Grid Layout -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+              <!-- WhatsApp Authentication Card -->
+              <div class="xl:col-span-2 bg-surface-glass backdrop-blur-[20px] border border-border-glass rounded-xl p-6 shadow-2xl flex flex-col gap-6 relative overflow-hidden group">
+                <!-- Subtle background glow -->
+                <div class="absolute -top-20 -right-20 w-64 h-64 bg-primary-container rounded-full blur-[100px] opacity-10 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none"></div>
+                
+                <div class="flex justify-between items-center border-b border-border-glass pb-4 z-10">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-border-glass">
+                      <svg class="w-5 h-5 text-primary-fixed-dim" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"></path></svg>
+                    </div>
+                    <div>
+                      <h3 class="font-title-md text-title-md text-on-surface m-0">WhatsApp Connection</h3>
+                      <p class="font-body-md text-label-sm text-on-surface-variant flex items-center gap-2 m-0">
+                        <span class="w-2 h-2 rounded-full bg-primary-container shadow-glow-cyan inline-block"></span> Baileys Multi-Device
+                      </p>
+                    </div>
+                  </div>
+                  <button id="btnAddInstance" class="px-4 py-2 rounded-lg border border-border-glass bg-surface-container-low hover:bg-surface-container-high transition-colors font-label-sm text-label-sm text-on-surface flex items-center gap-2 cursor-pointer">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">add</span>
+                    Nova Linha
+                  </button>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Anon Key</label>
-                  <input type="password" class="form-input" id="settingsSupabaseKey">
+
+                <div class="z-10 w-full" style="min-height: 200px;">
+                  <div id="instancesGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+                    <div class="text-center text-on-surface-variant py-8 w-full">Carregando instâncias...</div>
+                  </div>
                 </div>
-                <button class="btn btn-sm btn-primary" id="btnSaveSupabase">Salvar e Reconectar</button>
               </div>
-            </div>
 
-            <div class="card">
-              <div class="card-header"><h3>Anything LLM</h3></div>
-              <div class="card-body">
-                <div class="form-group">
-                  <label class="form-label">URL Base</label>
-                  <input type="text" class="form-input" id="settingsAnythingUrl" value="https://area-51-anything-llm.mypaeg.easypanel.host">
+              <!-- API Keys Card (Supabase & Anything LLM) -->
+              <div class="bg-surface-glass backdrop-blur-[20px] border border-border-glass rounded-xl p-6 shadow-2xl flex flex-col gap-6">
+                <div class="flex items-center gap-3 border-b border-border-glass pb-4">
+                  <span class="material-symbols-outlined text-primary-fixed-dim">key</span>
+                  <h3 class="font-title-md text-title-md text-on-surface m-0">API Access</h3>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">API Key</label>
-                  <input type="password" class="form-input" id="settingsAnythingKey">
+                
+                <div class="flex flex-col gap-5 flex-1">
+                  <!-- Supabase -->
+                  <div class="flex flex-col gap-2">
+                    <label class="font-label-sm text-label-sm text-on-surface-variant flex justify-between">
+                      Supabase (Raio X)
+                      <span class="text-primary-fixed-dim bg-primary-fixed-dim/10 px-2 py-0.5 rounded text-[10px]">DB</span>
+                    </label>
+                    <input type="text" id="settingsSupabaseUrl" class="w-full bg-surface-container-lowest border border-border-glass rounded-lg px-3 py-2 recessed-glass text-sm text-on-surface-variant mb-2" value="https://iwpveyworwdymlzdmloq.supabase.co" placeholder="URL do Projeto">
+                    <input type="password" id="settingsSupabaseKey" class="w-full bg-surface-container-lowest border border-border-glass rounded-lg px-3 py-2 recessed-glass text-sm text-on-surface-variant" placeholder="Anon Key">
+                    <button id="btnSaveSupabase" class="mt-2 w-full py-2 rounded-lg border border-primary-fixed-dim text-primary-fixed-dim hover:bg-glow-cyan hover:text-white transition-all font-label-sm text-label-sm cursor-pointer shadow-glow-cyan">Salvar Supabase</button>
+                  </div>
+
+                  <!-- Anything LLM -->
+                  <div class="flex flex-col gap-2 mt-2">
+                    <label class="font-label-sm text-label-sm text-on-surface-variant flex justify-between">
+                      Anything LLM
+                      <span class="text-primary-fixed-dim bg-primary-fixed-dim/10 px-2 py-0.5 rounded text-[10px]">AI</span>
+                    </label>
+                    <input type="text" id="settingsAnythingUrl" class="w-full bg-surface-container-lowest border border-border-glass rounded-lg px-3 py-2 recessed-glass text-sm text-on-surface-variant mb-2" value="https://area-51-anything-llm.mypaeg.easypanel.host" placeholder="URL Base">
+                    <input type="password" id="settingsAnythingKey" class="w-full bg-surface-container-lowest border border-border-glass rounded-lg px-3 py-2 recessed-glass text-sm text-on-surface-variant" placeholder="API Key">
+                    <button id="btnSaveAnything" class="mt-2 w-full py-2 rounded-lg border border-primary-fixed-dim text-primary-fixed-dim hover:bg-glow-cyan hover:text-white transition-all font-label-sm text-label-sm cursor-pointer shadow-glow-cyan">Salvar Anything LLM</button>
+                  </div>
                 </div>
-                <button class="btn btn-sm btn-primary" id="btnSaveAnything">Salvar e Testar</button>
               </div>
+
+              <!-- Gerenciamento de Usuários (formerly Billing Plan) -->
+              <div class="xl:col-span-3 bg-surface-glass backdrop-blur-[20px] border border-border-glass rounded-xl p-6 shadow-2xl flex flex-col gap-6">
+                <div class="flex items-center justify-between border-b border-border-glass pb-4">
+                  <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary-fixed-dim">group_add</span>
+                    <h3 class="font-title-md text-title-md text-on-surface m-0">Gerenciamento de Usuários</h3>
+                  </div>
+                  <span class="px-3 py-1 bg-primary-container text-on-primary-container rounded-full font-label-sm text-[10px] font-bold shadow-glow-cyan uppercase tracking-wider">Admin</span>
+                </div>
+                
+                <div class="flex flex-col gap-4">
+                  <p class="text-sm text-on-surface-variant m-0">Cadastre manualmente membros da equipe para acessarem o sistema. A restrição de domínio não é aplicada aqui.</p>
+                  
+                  <form onsubmit="handleAdminRegister(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end m-0">
+                    <div class="flex flex-col gap-2">
+                      <label class="font-label-sm text-label-sm text-on-surface-variant">E-mail</label>
+                      <input type="email" id="adminRegEmail" required placeholder="email@exemplo.com" class="w-full bg-surface-container-lowest border border-border-glass rounded-lg px-3 py-2 recessed-glass text-sm text-on-surface">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                      <label class="font-label-sm text-label-sm text-on-surface-variant">WhatsApp</label>
+                      <input type="text" id="adminRegPhone" required placeholder="5511999999999" class="w-full bg-surface-container-lowest border border-border-glass rounded-lg px-3 py-2 recessed-glass text-sm text-on-surface">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                      <label class="font-label-sm text-label-sm text-on-surface-variant">Senha Padrão</label>
+                      <input type="password" id="adminRegPassword" required placeholder="Senha inicial" class="w-full bg-surface-container-lowest border border-border-glass rounded-lg px-3 py-2 recessed-glass text-sm text-on-surface">
+                    </div>
+                    <div>
+                      <button type="submit" class="w-full py-2.5 rounded-lg bg-primary-container text-on-primary-container hover:brightness-110 transition-all font-label-sm text-label-sm shadow-glow-cyan font-bold cursor-pointer">Cadastrar Usuário</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
             </div>
           </div>
-
-          <!-- Gerenciamento de Usuários -->
-          <div class="card mt-4">
-            <div class="card-header"><h3>Gerenciamento de Usuários</h3></div>
-            <div class="card-body">
-              <p class="text-sm text-muted mb-4">Cadastre manualmente membros da equipe para acessarem o sistema. A restrição de domínio @exdevedor.com.br não é aplicada aqui.</p>
-              <form onsubmit="handleAdminRegister(event)" class="grid-3" style="align-items: end; gap: 1rem;">
-                <div class="form-group mb-0">
-                  <label class="form-label">E-mail</label>
-                  <input type="email" class="form-input" id="adminRegEmail" required placeholder="email@exemplo.com">
-                </div>
-                <div class="form-group mb-0">
-                  <label class="form-label">WhatsApp</label>
-                  <input type="text" class="form-input" id="adminRegPhone" required placeholder="5511999999999">
-                </div>
-                <div class="form-group mb-0">
-                  <label class="form-label">Senha Padrão</label>
-                  <input type="password" class="form-input" id="adminRegPassword" required placeholder="Senha inicial">
-                </div>
-                <div style="grid-column: span 3; display: flex; justify-content: flex-end;">
-                  <button type="submit" class="btn btn-sm btn-primary">Cadastrar Usuário</button>
-                </div>
-              </form>
-            </div>
-          </div>
-
         </div>
 
       </div> <!-- /tab-content-area -->

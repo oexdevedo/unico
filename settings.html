@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Configurações - Unico AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Recessed Inner Shadow for Inputs */
+        .recessed-glass {
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        /* Ambient Glow Animations */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(0, 242, 255, 0.5); }
+        }
+        .active-pulse {
+            animation: pulse-glow 3s infinite alternate;
+        }
+        
+        /* Custom Scrollbar for Main Content */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#0b1515",
+                        "tertiary": "#f7f8f8",
+                        "on-tertiary": "#2f3131",
+                        "secondary-fixed": "#c5eae9",
+                        "on-tertiary-container": "#5e6060",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "outline": "#849495",
+                        "error": "#ffb4ab",
+                        "secondary-container": "#2d4f4f",
+                        "tertiary-container": "#dbdbdb",
+                        "on-secondary-container": "#9bbfbf",
+                        "primary-container": "#00f2ff",
+                        "surface-container-high": "#222c2c",
+                        "on-background": "#dae5e4",
+                        "on-surface": "#dae5e4",
+                        "on-secondary": "#123636",
+                        "secondary-fixed-dim": "#a9cdcd",
+                        "surface-bright": "#313b3b",
+                        "inverse-primary": "#00696f",
+                        "on-surface-variant": "#b9cacb",
+                        "surface-container-lowest": "#061010",
+                        "on-primary-fixed": "#002022",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "inverse-on-surface": "#283232",
+                        "on-primary-container": "#006a71",
+                        "surface-tint": "#00dbe7",
+                        "surface-dim": "#0b1515",
+                        "on-secondary-fixed-variant": "#2a4c4c",
+                        "background": "#0b1515",
+                        "border-glass": "rgba(255, 255, 255, 0.12)",
+                        "surface-container": "#172121",
+                        "inverse-surface": "#dae5e4",
+                        "secondary": "#a9cdcd",
+                        "primary-fixed": "#74f5ff",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "outline-variant": "#3a494b",
+                        "on-primary-fixed-variant": "#004f54",
+                        "surface-container-highest": "#2c3737",
+                        "primary": "#e1fdff",
+                        "glow-cyan": "rgba(0, 242, 255, 0.4)",
+                        "surface-variant": "#2c3737",
+                        "on-secondary-fixed": "#002020",
+                        "surface-container-low": "#131d1d",
+                        "bg-deep-teal": "#0F1717",
+                        "on-error": "#690005",
+                        "primary-fixed-dim": "#00dbe7",
+                        "surface-glass": "rgba(255, 255, 255, 0.05)",
+                        "on-error-container": "#ffdad6",
+                        "on-primary": "#00363a",
+                        "error-container": "#93000a",
+                        "tertiary-fixed": "#e2e2e2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding": "24px",
+                        "margin-lg": "32px",
+                        "margin-sm": "8px",
+                        "margin-md": "16px",
+                        "panel-gap": "20px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Sora"],
+                        "headline-lg": ["Sora"],
+                        "label-sm": ["Sora"],
+                        "title-md": ["Sora"],
+                        "body-lg": ["Sora"],
+                        "headline-lg-mobile": ["Sora"],
+                        "body-md": ["Sora"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-bg-deep-teal text-on-surface h-screen w-screen overflow-hidden flex relative font-sans">
+<!-- Organic Background Texture -->
+<div class="absolute inset-0 z-0 opacity-40 mix-blend-overlay pointer-events-none" data-alt="A subtle, highly abstract organic pattern resembling deep ocean currents or bioluminescent algae structures, rendered in deep teals and charcoal blacks, providing a rich, mysterious background texture without overpowering the foreground elements." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBfYH522c9VGOrQ1clp-IL5bR6YS4y7XJGo3di3uX3BYQ9EPMmQQxguZw1_-rkNfRuRXCAeDCf-Qk7S4kdNSnoDzIE3kk7ldjMUOTrmVk1qlamgZUm9uLwn_X9BgiHK7cZe18X4I50kwvTzCupLQRtBhyTKPliFKCpDF6Ru7FZjgqe9FBvKga2xnXCdoNFqjsfCb_t32YyEL3s2apYBnPPd2nSNEyloQd9CTbBNlPq6YWf7sf2oYE53')"></div>
+<!-- SideNavBar (Predicted Component) -->
+<aside class="w-20 lg:w-64 h-[calc(100vh-48px)] m-6 rounded-xl border border-border-glass bg-surface-glass backdrop-blur-xl shadow-2xl flex flex-col items-center py-8 gap-margin-lg z-10 flex-shrink-0 relative">
+<!-- Header / Profile -->
+<div class="flex flex-col items-center gap-2 w-full px-4">
+<div class="relative w-12 h-12 rounded-full overflow-hidden border border-border-glass">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a user, stylized with a slight cool-toned color grading to match the bioluminescent UI, surrounded by a thin white border." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsQHJd7QtEubL7rYcTvZIaKzraj4TLUl3uJLD_U-6tVlmmq-VE49Sd-e_C0_SS_RBhDgmBIvDCKv5uRP3oBQczlmepDNsic6ApnqP5Al_FZQBlTGAnt9qJMNUhkM7fPEJCzF1dmGye3sJ5384FBnYTo-rKDRdiYlIQfApIcN2mslk4cIXI25QC36fW7equ23PYpFxL8l3JqziP4NvJ79y1m97YjT1QD2nRTQSitSIsOWfiyu-5hkUc"/>
+<div class="absolute bottom-0 right-0 w-3 h-3 bg-primary-container rounded-full border-2 border-surface active-pulse"></div>
+</div>
+<div class="hidden lg:flex flex-col items-center text-center">
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight" style="font-size: 20px; line-height: 28px;">Unico AI</h2>
+<span class="font-label-sm text-label-sm text-primary-fixed-dim">Admin Console</span>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 w-full px-4 flex flex-col gap-2 mt-4">
+<!-- Dashboard (Inactive) -->
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all duration-300 scale-95 active:scale-90 w-full group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md hidden lg:block">Dashboard</span>
+</a>
+<!-- Messages (Inactive) -->
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all duration-300 scale-95 active:scale-90 w-full group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors" data-icon="chat">chat</span>
+<span class="font-body-md text-body-md hidden lg:block">Messages</span>
+</a>
+<!-- Agents (Inactive) -->
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all duration-300 scale-95 active:scale-90 w-full group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors" data-icon="smart_toy">smart_toy</span>
+<span class="font-body-md text-body-md hidden lg:block">Agents</span>
+</a>
+<!-- Settings (Active) -->
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg bg-primary-container text-on-primary-container shadow-glow-cyan transition-transform scale-95 active:scale-90 w-full" href="#">
+<span class="material-symbols-outlined filled" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md font-semibold hidden lg:block">Settings</span>
+</a>
+</nav>
+<!-- Footer Action -->
+<div class="w-full px-4 mt-auto">
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all duration-300 scale-95 active:scale-90 w-full border-t border-border-glass pt-4" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-md text-body-md hidden lg:block">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 h-[calc(100vh-48px)] my-6 mr-6 flex flex-col gap-8 overflow-y-auto z-10 relative pb-10">
+<!-- Header -->
+<header class="flex justify-between items-end shrink-0 pt-2">
+<div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface">Configurações</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Manage your system preferences and integrations.</p>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+<!-- WhatsApp Authentication Card (Spans 2 columns on large screens) -->
+<div class="xl:col-span-2 bg-surface-glass backdrop-blur-[20px] border border-border-glass rounded-xl p-6 shadow-2xl flex flex-col gap-6 relative overflow-hidden group">
+<!-- Subtle background glow for the card -->
+<div class="absolute -top-20 -right-20 w-64 h-64 bg-primary-container rounded-full blur-[100px] opacity-10 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none"></div>
+<div class="flex justify-between items-center border-b border-border-glass pb-4 z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-border-glass">
+<svg class="w-5 h-5 text-primary-fixed-dim" fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"></path></svg>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">WhatsApp Connection</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error inline-block"></span> Disconnected
+                            </p>
+</div>
+</div>
+<button class="px-4 py-2 rounded-lg border border-border-glass bg-surface-container-low hover:bg-surface-container-high transition-colors font-label-sm text-label-sm text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
+                        Regenerate
+                    </button>
+</div>
+<div class="flex flex-col md:flex-row gap-8 items-center justify-center flex-1 z-10 py-4">
+<!-- QR Code Container (Frosted Inner Box) -->
+<div class="p-4 bg-surface-container-lowest border border-border-glass rounded-xl shadow-inner relative">
+<!-- Corner Accents -->
+<div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary-container rounded-tl-lg"></div>
+<div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-primary-container rounded-tr-lg"></div>
+<div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-primary-container rounded-bl-lg"></div>
+<div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary-container rounded-br-lg"></div>
+<div class="w-48 h-48 bg-white rounded-lg flex items-center justify-center overflow-hidden mix-blend-screen" data-alt="A clean, high-contrast QR code centered on a pure white background, designed to look sharp and scannable. The surrounding context is a dark, sleek UI, making the white square pop prominently." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBYBW2KBHXTM-Wvpx3i_RfuEhzygN6wnBzErT-4xHJC9sztASLfeGHbn3ckv2r2OxSFHZDb4b3odft-p-ubhNSIpSnC-bUGSLIpUnApl2fO8vJuqZ__FU_wTXSnLmuAS32RStJiWRL-O5n9OUCzCNnMiPkthtMHzAdCBVnBRsHrgKSqp4zuG2tFExJRCa7O1-Br4NqLuJoETd8hL_nprXpmC6HIBOhJbXyVE5KQcIYjr_6MKkb1AF4q')">
+<!-- Using background image for QR code to simulate it blending into the glass -->
+</div>
+</div>
+<div class="flex flex-col gap-4 max-w-sm">
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container-high border border-border-glass flex items-center justify-center text-primary-fixed-dim text-xs font-bold mt-0.5">1</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Open WhatsApp on your phone.</p>
+</div>
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container-high border border-border-glass flex items-center justify-center text-primary-fixed-dim text-xs font-bold mt-0.5">2</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Tap <strong>Menu</strong> or <strong>Settings</strong> and select <strong>Linked Devices</strong>.</p>
+</div>
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container-high border border-border-glass flex items-center justify-center text-primary-fixed-dim text-xs font-bold mt-0.5">3</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Point your phone to this screen to capture the code.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- API Keys Card -->
+<div class="bg-surface-glass backdrop-blur-[20px] border border-border-glass rounded-xl p-6 shadow-2xl flex flex-col gap-6">
+<div class="flex items-center gap-3 border-b border-border-glass pb-4">
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="key">key</span>
+<h3 class="font-title-md text-title-md text-on-surface">API Access</h3>
+</div>
+<div class="flex flex-col gap-5 flex-1 justify-center">
+<!-- Production Key -->
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant flex justify-between">
+                            Production Key
+                            <span class="text-primary-fixed-dim bg-primary-fixed-dim/10 px-2 py-0.5 rounded text-[10px]">Live</span>
+</label>
+<div class="flex items-center gap-2">
+<div class="flex-1 bg-surface-container-lowest border border-border-glass rounded-lg px-3 py-2.5 recessed-glass flex items-center overflow-hidden">
+<span class="font-mono text-sm text-on-surface-variant truncate w-full tracking-widest">pk_live_••••••••••••••••••••••••</span>
+</div>
+<button class="p-2.5 rounded-lg border border-border-glass bg-surface-container-low hover:bg-surface-container-high hover:text-primary-container transition-colors text-on-surface-variant" title="Copy Key">
+<span class="material-symbols-outlined" data-icon="content_copy" style="font-size: 18px;">content_copy</span>
+</button>
+</div>
+</div>
+<!-- Test Key -->
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant">Test Key</label>
+<div class="flex items-center gap-2">
+<div class="flex-1 bg-surface-container-lowest border border-border-glass rounded-lg px-3 py-2.5 recessed-glass flex items-center overflow-hidden">
+<span class="font-mono text-sm text-on-surface-variant truncate w-full tracking-widest">sk_test_8f92a1b3c4d5e6f7g8h9i0</span>
+</div>
+<button class="p-2.5 rounded-lg border border-border-glass bg-surface-container-low hover:bg-surface-container-high hover:text-primary-container transition-colors text-on-surface-variant" title="Copy Key">
+<span class="material-symbols-outlined" data-icon="content_copy" style="font-size: 18px;">content_copy</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Billing Plan Card -->
+<div class="bg-surface-glass backdrop-blur-[20px] border border-border-glass rounded-xl p-6 shadow-2xl flex flex-col gap-6">
+<div class="flex items-center justify-between border-b border-border-glass pb-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="credit_card">credit_card</span>
+<h3 class="font-title-md text-title-md text-on-surface">Billing &amp; Plan</h3>
+</div>
+<span class="px-3 py-1 bg-primary-container text-on-primary-container rounded-full font-label-sm text-[10px] font-bold shadow-glow-cyan uppercase tracking-wider">Pro Tier</span>
+</div>
+<div class="flex flex-col gap-4 flex-1">
+<div class="flex justify-between items-end">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant mb-1">Current Cycle Usage</span>
+<span class="font-headline-lg text-headline-lg text-on-surface">42,500</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant pb-1">/ 50,000 msgs</span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-2 bg-surface-container-lowest rounded-full overflow-hidden border border-border-glass">
+<div class="h-full bg-primary-container shadow-glow-cyan rounded-full" style="width: 85%;"></div>
+</div>
+<div class="mt-auto pt-4 flex gap-3">
+<button class="flex-1 py-2.5 rounded-lg border border-primary-fixed-dim text-primary-fixed-dim hover:bg-glow-cyan hover:text-white transition-all font-label-sm text-label-sm text-center shadow-glow-cyan">
+                            Upgrade Plan
+                        </button>
+</div>
+</div>
+</div>
+<!-- Notifications / Preferences Card -->
+<div class="xl:col-span-2 bg-surface-glass backdrop-blur-[20px] border border-border-glass rounded-xl p-6 shadow-2xl flex flex-col gap-6">
+<div class="flex items-center gap-3 border-b border-border-glass pb-4">
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="notifications_active">notifications_active</span>
+<h3 class="font-title-md text-title-md text-on-surface">Alerts &amp; Notifications</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Toggle Item -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-surface-container-low border border-border-glass">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium">Agent Disconnect Alerts</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Get notified if WhatsApp drops.</span>
+</div>
+<!-- Custom Toggle (Checked) -->
+<div class="w-10 h-6 bg-primary-container rounded-full relative cursor-pointer shadow-glow-cyan border border-primary">
+<div class="absolute right-1 top-1 w-4 h-4 bg-on-primary-container rounded-full"></div>
+</div>
+</div>
+<!-- Toggle Item -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-surface-container-low border border-border-glass">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium">Usage Limit Warnings</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Alerts at 80% and 100% capacity.</span>
+</div>
+<!-- Custom Toggle (Checked) -->
+<div class="w-10 h-6 bg-primary-container rounded-full relative cursor-pointer shadow-glow-cyan border border-primary">
+<div class="absolute right-1 top-1 w-4 h-4 bg-on-primary-container rounded-full"></div>
+</div>
+</div>
+<!-- Toggle Item -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-surface-container-low border border-border-glass opacity-70">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium">Weekly Digest</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Summary of agent performance.</span>
+</div>
+<!-- Custom Toggle (Unchecked) -->
+<div class="w-10 h-6 bg-surface-container-highest rounded-full relative cursor-pointer border border-border-glass inset-shadow">
+<div class="absolute left-1 top-1 w-4 h-4 bg-on-surface-variant rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

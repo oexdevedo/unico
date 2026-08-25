@@ -1,7 +1,7 @@
 {
   "baseUrl": "https://area-51-anything-llm.mypaeg.easypanel.host",
   "apiKey": "BGJ66NS-Q2N4TJ9-GQ7HVR0-NX0E70G",
-  "autoReplyEnabled": true,
+  "autoReplyEnabled": false,
   "activeAgent": "vendas-tutu",
   "replyDelayMin": 3,
   "replyDelayMax": 6,

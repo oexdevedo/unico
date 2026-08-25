@@ -57,5 +57,62 @@
       }
     ],
     "createdAt": "2026-08-12T12:17:31.551Z"
+  },
+  {
+    "id": "list_1787664807382",
+    "name": "Alunos",
+    "description": "alunos mentoria",
+    "color": "#ef4444",
+    "contacts": [
+      {
+        "phone": "61 982694672",
+        "name": "Ry"
+      },
+      {
+        "phone": "0219970265381",
+        "name": "Maria"
+      },
+      {
+        "phone": "6191149823",
+        "name": "Aurani"
+      },
+      {
+        "phone": "5521972141357",
+        "name": "Bia Exdv"
+      },
+      {
+        "phone": "61 998239454",
+        "name": "Camila Freitas EXDV"
+      },
+      {
+        "phone": "6196778007",
+        "name": "Paulo Cerqueira"
+      },
+      {
+        "phone": "(85) 99985-0673",
+        "name": "Eric Patrick Chaves Alves"
+      },
+      {
+        "phone": "61983151509",
+        "name": "Marcos Cosra"
+      },
+      {
+        "phone": "61 219803957680",
+        "name": "Uilton"
+      },
+      {
+        "phone": "21 997548120",
+        "name": "Viviane"
+      },
+      {
+        "phone": "21 973528903",
+        "name": "Andre"
+      },
+      {
+        "phone": "021970265381",
+        "name": "Maria"
+      }
+    ],
+    "createdAt": "2026-08-25T13:33:27.382Z"
   }
 ]

@@ -29,5 +29,12 @@
     "category": "Geral",
     "text": "{Olá|Oi|Bom dia}, {primeiro_nome}, tudo bem?  olha isso https://tutu.exdevedor.com",
     "createdAt": "2026-08-12T12:35:28.036Z"
+  },
+  {
+    "id": "tmpl_1787667506706",
+    "name": "Aviso Férias",
+    "category": "Geral",
+    "text": "{saudacao}, {nome} tudo bem?\n\nEssa mensagem é do Unico, o sistema de mensagens da Ex Devedor.\n\nPassando para lembrar que os horários para agendamento de mentoria já estão disponíveis! Se você precisa tirar dúvidas, alinhar seus estudos ou definir os próximos passos, não deixe para a última hora: garanta o seu horário na agenda o quanto antes.\n\n📌 Aviso sobre o período de férias:\nInformamos que o Yuri estará de férias no período de 08 a 24 de setembro. Durante esse intervalo, as mentorias e atendimentos estarão suspensos. Retornaremos às atividades normais no dia 25 de setembro.\n\nAproveitem para agendar seus horários antes da pausa!\nhttps://cal.com/exdevedor/mentoria",
+    "createdAt": "2026-08-25T14:18:26.706Z"
   }
 ]
