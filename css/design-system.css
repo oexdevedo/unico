@@ -8,66 +8,57 @@
    1. CSS CUSTOM PROPERTIES (DESIGN TOKENS)
    ============================================================================ */
 :root {
-  /* -- Brand Colors (Purple Dashboard) -- */
-  --brand-primary: #5c307a;
-  --brand-primary-light: #895da6;
-  --brand-primary-dark: #3a1e4d;
-  --brand-accent: #ffffff;
-  --brand-accent-light: #e5d9f0;
+  /* -- Brand Colors (Dark Teal Neon) -- */
+  --brand-primary: #00f2ff;
+  --brand-primary-light: #74f5ff;
+  --brand-primary-dark: #006a71;
+  --brand-accent: #00dbe7;
+  --brand-accent-light: #c5eae9;
 
-  /* -- Surface Colors (Light) -- */
-  --bg-app: #dcc8f5; /* Fundo geral da página (Lilás Suave) */
-  --bg-surface: #ffffff;
-  --bg-surface-raised: #f7f3fb; /* Muito suavemente lilás */
-  --bg-surface-hover: #ede5f5;
-  --bg-surface-active: #e3d5f0;
-  --bg-sidebar: #4b2663; /* Roxo Escuro */
-  --bg-input: #f9f9fb;
-  --bg-overlay: rgba(58, 30, 77, 0.4);
-
-  /* -- Pastel Cards (Amigável) -- */
-  --pastel-green: #e8f5e9;
-  --pastel-yellow: #fff8e1;
-  --pastel-pink: #fce4ec;
-  --pastel-blue: #e3f2fd;
-  --pastel-purple: #f3e5f5;
-  --pastel-orange: #fff3e0;
-  --pastel-mint: #e0f7fa;
+  /* -- Surface Colors (Dark Glassmorphism) -- */
+  --bg-app: transparent; /* Será sobreposto pela imagem no body */
+  --bg-surface: rgba(255, 255, 255, 0.05);
+  --bg-surface-raised: rgba(255, 255, 255, 0.08);
+  --bg-surface-hover: rgba(255, 255, 255, 0.12);
+  --bg-surface-active: rgba(255, 255, 255, 0.15);
+  --bg-sidebar: #061010;
+  --bg-input: #061010;
+  --bg-overlay: rgba(6, 16, 16, 0.8);
 
   /* -- Text Colors -- */
-  --text-primary: #2d1a3b;
-  --text-secondary: #5e4b6d;
-  --text-muted: #9686a3;
-  --text-inverse: #ffffff;
-  --text-link: #895da6;
+  --text-primary: #dae5e4;
+  --text-secondary: #b9cacb;
+  --text-muted: #849495;
+  --text-inverse: #00363a;
+  --text-link: #00f2ff;
 
   /* -- Status Colors -- */
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
-  --color-info: #3b82f6;
+  --color-info: #00dbe7;
   --color-purple: #8b5cf6;
   --color-pink: #ec4899;
   --color-cyan: #06b6d4;
 
   /* -- Border & Divider -- */
-  --border-color: #ebe3f2;
-  --border-color-light: #f7f3fb;
-  --border-radius-sm: 16px;
-  --border-radius: 28px;
-  --border-radius-lg: 36px;
-  --border-radius-xl: 48px;
+  --border-color: rgba(255, 255, 255, 0.12);
+  --border-color-light: rgba(255, 255, 255, 0.05);
+  --border-radius-sm: 8px;
+  --border-radius: 12px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 24px;
   --border-radius-full: 9999px;
 
   /* -- Shadows -- */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.15);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 15px rgba(0, 242, 255, 0.2);
 
   /* -- Typography -- */
-  --font-primary: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-primary: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --font-size-xs: 0.7rem;
   --font-size-sm: 0.8rem;
@@ -96,7 +87,7 @@
   --space-12: 48px;
 
   /* -- Layout -- */
-  --sidebar-width: 80px; /* Slim Icon Sidebar */
+  --sidebar-width: 80px; 
   --sidebar-collapsed: 80px;
   --header-height: 80px;
   --transition-fast: 0.15s ease;
@@ -150,12 +141,11 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 body {
   font-family: var(--font-primary);
   font-size: var(--font-size-base);
   color: var(--text-primary);
-  background: var(--bg-surface);
+  background-color: #0b1515;
   line-height: 1.6;
   overflow: hidden;
   height: 100vh;
@@ -266,11 +256,13 @@ a:hover { text-decoration: underline; }
 }
 
 .tab-btn.active {
-  background: #ffffff;
-  color: var(--bg-sidebar);
-  border-radius: var(--border-radius-lg) 0 0 var(--border-radius-lg);
-  margin-left: 8px; /* Para grudar na borda direita do menu e arredondar a esquerda, como um "corte" */
-  width: calc(100% - 8px);
+  background: rgba(0, 242, 255, 0.1);
+  color: var(--brand-primary);
+  border-right: 3px solid var(--brand-primary);
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--shadow-glow);
+  margin-left: 8px; 
+  width: calc(100% - 16px);
   justify-content: flex-start;
   padding-left: 12px;
 }
@@ -306,10 +298,9 @@ a:hover { text-decoration: underline; }
   letter-spacing: 0.02em;
 }
 
-.badge-success { background: #dcfce7; color: #166534; }
-.badge-warning { background: #fef3c7; color: #92400e; }
-.badge-danger { background: #fee2e2; color: #991b1b; }
-.badge-info { background: #dbeafe; color: #1e40af; }
+.badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+.badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
 .badge-neutral { background: var(--bg-input); color: var(--text-secondary); }
 .badge-purple { background: #f3e8ff; color: #6b21a8; }
 
@@ -603,10 +594,13 @@ a:hover { text-decoration: underline; }
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   transition: all var(--transition-normal);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .card-header {
@@ -992,7 +986,7 @@ tr:last-child td { border-bottom: none; }
 }
 
 .inbox-list {
-  background: #f0f2f5;
+  background: var(--bg-surface);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -1001,7 +995,7 @@ tr:last-child td { border-bottom: none; }
 
 .inbox-list-header {
   padding: var(--space-4);
-  background: #f0f2f5;
+  background: var(--bg-surface);
 }
 
 .inbox-list-scroll {
@@ -1021,10 +1015,10 @@ tr:last-child td { border-bottom: none; }
   transition: all var(--transition-fast);
 }
 
-.inbox-item:hover { background: rgba(0,0,0,0.03); }
+.inbox-item:hover { background: var(--bg-surface-hover); }
 .inbox-item.active { 
-  background: #ffffff; 
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  background: var(--bg-surface-active); 
+  box-shadow: none;
 }
 
 .inbox-avatar {
@@ -1090,14 +1084,14 @@ tr:last-child td { border-bottom: none; }
 .chat-area {
   display: flex;
   flex-direction: column;
-  background: #ffffff;
+  background: transparent;
   overflow: hidden;
   width: 100%;
 }
 
 .chat-header {
   padding: var(--space-3) var(--space-5);
-  background: #f0f2f5;
+  background: var(--bg-surface);
   border-bottom: 1px solid var(--border-color-light);
   display: flex;
   align-items: center;
@@ -1129,7 +1123,7 @@ tr:last-child td { border-bottom: none; }
 }
 
 .chat-bubble.incoming {
-  background: #ffffff;
+  background: var(--bg-surface-raised);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   align-self: flex-start;
@@ -1171,7 +1165,7 @@ tr:last-child td { border-bottom: none; }
 /* -- Chat Input -- */
 .chat-input-area {
   padding: 16px 24px;
-  background: #e5e7eb;
+  background: var(--bg-surface);
 }
 
 .chat-input-wrapper {
@@ -1200,7 +1194,8 @@ tr:last-child td { border-bottom: none; }
   flex: 1;
   display: flex;
   align-items: center;
-  background: #ffffff;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   border-radius: 999px;
   padding: 6px 16px;
   min-height: 48px;
