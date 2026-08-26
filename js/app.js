@@ -351,7 +351,7 @@ const App = (() => {
               <i class="ti ti-playlist-add" style="font-size:0.85rem; color:var(--brand-primary); opacity:0.6;"></i>
             </a>
           </td>
-          <td>${c.hasWhatsApp ? `<span style="color: #000; font-weight: 600;">${c.phoneFormatted}</span>` : `<span class="text-danger">${c.phoneFormatted || 'Sem nº'}</span>`}</td>
+          <td>${c.hasWhatsApp ? `<span style="font-weight: 600; color: var(--text-primary);">${c.phoneFormatted}</span>` : `<span class="text-danger">${c.phoneFormatted || 'Sem nº'}</span>`}</td>
           <td>${c.email || '<span class="text-muted">—</span>'}</td>
           <td>${(c.profession && c.profession !== 'Não informado') ? c.profession : '<span class="text-muted">Não informado</span>'}</td>
           <td>${(c.region && c.region !== 'Não informado') ? c.region : '<span class="text-muted">Não informado</span>'}</td>
@@ -405,13 +405,13 @@ const App = (() => {
       selectEl.style.background = newColor;
       selectEl.style.borderColor = newColor;
 
-      if (window.SupabaseModule && typeof SupabaseModule.getAllContacts === 'function') {
+      if (typeof SupabaseModule !== 'undefined' && typeof SupabaseModule.getAllContacts === 'function') {
         const contact = SupabaseModule.getAllContacts().find(c => String(c.id) === String(contactId));
         if (contact) contact.status = newStatus;
       }
 
       try {
-        if (window.SupabaseModule && typeof SupabaseModule.updateContactStatus === 'function') {
+        if (typeof SupabaseModule !== 'undefined' && typeof SupabaseModule.updateContactStatus === 'function') {
           await SupabaseModule.updateContactStatus(contactId, newStatus);
         }
         if (typeof showToast === 'function') showToast(`✅ Status do Raio X alterado para ${newStatus}!`, 'success');

@@ -13,6 +13,7 @@
             <p>Um ecossistema que une tecnologia, educação financeira e acompanhamento humano para ajudar pessoas e empresas a conquistarem uma vida financeira saudável.</p>
             <a href="contato.php" class="btn btn-primary">Conheça o Ecossistema</a>
             <a href="trabalho.php" class="btn btn-outline" style="margin-left: 10px; color: white; border-color: white;">Ver Serviços</a>
+<button id="scrollBtn" class="btn btn-primary scroll-trigger">Explore nossos Serviços</button>
         </div>
     </div>
 </section>
@@ -27,7 +28,7 @@
 </section>
 
 <!-- Features Section -->
-<section class="features">
+<section id="servicos" class="features">
     <div class="container">
         <div class="features-grid">
             <div class="feature-card">

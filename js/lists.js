@@ -376,7 +376,7 @@ function filterListDropdown(query) {
 async function addSelectedContactsToList(listId, listName) {
   // Get selected contacts from SupabaseModule
   let selectedContacts = [];
-  if (window.SupabaseModule && typeof SupabaseModule.getSelectedContacts === 'function') {
+  if (typeof SupabaseModule !== 'undefined' && typeof SupabaseModule.getSelectedContacts === 'function') {
     selectedContacts = SupabaseModule.getSelectedContacts();
   }
 
@@ -549,7 +549,7 @@ function updateDispatcherSourceInfo() {
   const selCountSpan = document.getElementById('sourceSelectionCount');
   const selBadge = document.getElementById('sourceSelectionBadge');
 
-  const selectionCount = window.SupabaseModule ? SupabaseModule.getSelectedContacts().length : 0;
+  const selectionCount = typeof SupabaseModule !== 'undefined' ? SupabaseModule.getSelectedContacts().length : 0;
   if (selCountSpan) selCountSpan.textContent = selectionCount;
   if (selBadge) selBadge.textContent = `${selectionCount} selecionado(s)`;
 
@@ -624,7 +624,7 @@ let _currentSingleContact = null;
 
 window.openSingleContactAddToListModal = async function(contactId) {
   let contact = null;
-  if (window.SupabaseModule && typeof SupabaseModule.getAllContacts === 'function') {
+  if (typeof SupabaseModule !== 'undefined' && typeof SupabaseModule.getAllContacts === 'function') {
     contact = SupabaseModule.getAllContacts().find(c => String(c.id) === String(contactId));
   }
   if (!contact && window.ContactsAgendaModule && typeof window.ContactsAgendaModule.getContacts === 'function') {
