@@ -114,5 +114,368 @@
       }
     ],
     "createdAt": "2026-08-25T13:33:27.382Z"
+  },
+  {
+    "id": "list_1787761214938",
+    "name": "inova 2025",
+    "description": "",
+    "color": "#10b981",
+    "contacts": [
+      {
+        "id": "5561984574813",
+        "name": "GLAUCE FONSECA",
+        "phone": "5561984574813",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561981421419",
+        "name": "CARO DOURADO",
+        "phone": "5561981421419",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561992291230",
+        "name": "ARTHUR ALVES",
+        "phone": "5561992291230",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561993558654",
+        "name": "CLAUDIO ALVES",
+        "phone": "5561993558654",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561996017121",
+        "name": "ADRIANA",
+        "phone": "5561996017121",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5548998277756",
+        "name": "NAWCI",
+        "phone": "5548998277756",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561984424527",
+        "name": "ANA BARROS",
+        "phone": "5561984424527",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561981164218",
+        "name": "MARISTELA",
+        "phone": "5561981164218",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561999743688",
+        "name": "MARCIA",
+        "phone": "5561999743688",
+        "hasValidPhone": true
+      },
+      {
+        "id": "556192569537",
+        "name": "HELIA",
+        "phone": "556192569537",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561983357016",
+        "name": "WATSON",
+        "phone": "5561983357016",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561993667729",
+        "name": "ELAINE",
+        "phone": "5561993667729",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561981912514",
+        "name": "SERGIO",
+        "phone": "5561981912514",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561999882844",
+        "name": "RAFAEL",
+        "phone": "5561999882844",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5571999409813",
+        "name": "ROBERVAL",
+        "phone": "5571999409813",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561991657571",
+        "name": "LUCAS",
+        "phone": "5561991657571",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561996332322",
+        "name": "JACKSON",
+        "phone": "5561996332322",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561984246418",
+        "name": "MAIKY",
+        "phone": "5561984246418",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561985981887",
+        "name": "DALVACI",
+        "phone": "5561985981887",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561991150899",
+        "name": "VITORIA",
+        "phone": "5561991150899",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561981388567",
+        "name": "EMILLY",
+        "phone": "5561981388567",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561985270056",
+        "name": "MARILENE",
+        "phone": "5561985270056",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561986215111",
+        "name": "DAYANA",
+        "phone": "5561986215111",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561999221984",
+        "name": "GLAUCE",
+        "phone": "5561999221984",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561991902574",
+        "name": "FABIANA",
+        "phone": "5561991902574",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561993069336",
+        "name": "MAURICIO",
+        "phone": "5561993069336",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561992439433",
+        "name": "LUDIMILA",
+        "phone": "5561992439433",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561981535366",
+        "name": "MEIRE",
+        "phone": "5561981535366",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5589988311809",
+        "name": "MARA RUTH",
+        "phone": "5589988311809",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561993129262",
+        "name": "TIAGO F RODRIGUES",
+        "phone": "5561993129262",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561982812084",
+        "name": "JOÃO",
+        "phone": "5561982812084",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561985530000",
+        "name": "JOEL CASTRO",
+        "phone": "5561985530000",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561992117992",
+        "name": "DANIELE",
+        "phone": "5561992117992",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561981753308",
+        "name": "ELISANDRA",
+        "phone": "5561981753308",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561991404245",
+        "name": "SIMONE",
+        "phone": "5561991404245",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561993273371",
+        "name": "MARIZE",
+        "phone": "5561993273371",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561981687245",
+        "name": "JOANA",
+        "phone": "5561981687245",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561998390491",
+        "name": "JULIANA",
+        "phone": "5561998390491",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561985341350",
+        "name": "ANDRESSA",
+        "phone": "5561985341350",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5583999564414",
+        "name": "FLÁVIA PINHEIRO",
+        "phone": "5583999564414",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5511986663699",
+        "name": "MARCOS",
+        "phone": "5511986663699",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561984306452",
+        "name": "MICHAEL",
+        "phone": "5561984306452",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561981391703",
+        "name": "LOIANE",
+        "phone": "5561981391703",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561985425268",
+        "name": "LUCIANE",
+        "phone": "5561985425268",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561982587177",
+        "name": "TATIANE NERES",
+        "phone": "5561982587177",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561991260133",
+        "name": "ROSANA",
+        "phone": "5561991260133",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561933003078",
+        "name": "MARIELI SILVEIRA",
+        "phone": "5561933003078",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5511934650871",
+        "name": "LUIZA",
+        "phone": "5511934650871",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561998103882",
+        "name": "JAQUELINE",
+        "phone": "5561998103882",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561982993648",
+        "name": "ARTHUR TOMÉ",
+        "phone": "5561982993648",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561998929862",
+        "name": "PEDRO HENRIQUE",
+        "phone": "5561998929862",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561985453614",
+        "name": "CLAUDIA",
+        "phone": "5561985453614",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561991574144",
+        "name": "ELAINE BRANDÃO",
+        "phone": "5561991574144",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561983544536",
+        "name": "YASMIM",
+        "phone": "5561983544536",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561996233564",
+        "name": "JESSICA",
+        "phone": "5561996233564",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561992451265",
+        "name": "SAMUEL ESTEBAN",
+        "phone": "5561992451265",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561996375157",
+        "name": "ANA PAULA",
+        "phone": "5561996375157",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561985997203",
+        "name": "KATRIN CAMPOS",
+        "phone": "5561985997203",
+        "hasValidPhone": true
+      },
+      {
+        "id": "5561981950879",
+        "name": "RENATO ALEX",
+        "phone": "5561981950879",
+        "hasValidPhone": true
+      }
+    ],
+    "createdAt": "2026-08-26T16:20:14.938Z"
   }
 ]
