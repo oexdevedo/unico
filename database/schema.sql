@@ -1,6 +1,6 @@
 -- ============================================================================
 -- MassaZap 2.0 — Schema SQL Completo (Supabase / PostgreSQL)
--- Projeto: Raio X | CRM WhatsApp Multi-Agentes
+-- Projeto: Raio X | CRM WhatsApp Multi-Agentes (Multi-Tenant)
 -- ============================================================================
 
 -- ============================================================================
@@ -10,10 +10,38 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================================
--- 1. TABELA `crm_contacts` — Contatos do CRM (Substitui o uso de profiles)
+-- 0.1 TABELA `accounts` — Contas do Sistema (Multi-Tenant)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS accounts (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name            TEXT NOT NULL,
+  plan            TEXT DEFAULT 'basic',
+  status          TEXT DEFAULT 'active',
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================================
+-- 0.2 TABELA `whatsapp_instances` — Conexões de WhatsApp
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS whatsapp_instances (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  account_id      UUID REFERENCES accounts(id) ON DELETE CASCADE NOT NULL,
+  instance_name   TEXT NOT NULL,
+  status          TEXT DEFAULT 'disconnected', -- 'connected', 'disconnected', 'qr_ready'
+  jid             TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_whatsapp_instances_account_id ON whatsapp_instances (account_id);
+
+-- ============================================================================
+-- 1. TABELA `crm_contacts` — Contatos do CRM
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS crm_contacts (
   id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  account_id              UUID REFERENCES accounts(id) ON DELETE CASCADE NOT NULL,
   name                    TEXT NOT NULL,
   full_name               TEXT,
   whatsapp                TEXT,
@@ -32,15 +60,20 @@ CREATE TABLE IF NOT EXISTS crm_contacts (
 );
 
 -- Índices para consultas frequentes na tabela crm_contacts
+CREATE INDEX IF NOT EXISTS idx_crm_contacts_account_id ON crm_contacts (account_id);
 CREATE INDEX IF NOT EXISTS idx_crm_contacts_status ON crm_contacts (contact_status);
 CREATE INDEX IF NOT EXISTS idx_crm_contacts_tags ON crm_contacts USING GIN (tags);
 CREATE INDEX IF NOT EXISTS idx_crm_contacts_ai_mode ON crm_contacts (ai_mode);
+
+-- Constraint para garantir que o mesmo telefone não seja duplicado NA MESMA CONTA
+ALTER TABLE crm_contacts ADD CONSTRAINT uq_contact_phone_per_account UNIQUE (account_id, phone);
 
 -- ============================================================================
 -- 2. TABELA `campaigns` — Registro de Campanhas de Disparo
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS campaigns (
   id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  account_id    UUID REFERENCES accounts(id) ON DELETE CASCADE NOT NULL,
   name          TEXT NOT NULL,
   description   TEXT,
   template_text TEXT NOT NULL,
@@ -51,7 +84,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
   
   -- Controle
   status        TEXT DEFAULT 'draft',     -- 'draft', 'running', 'paused', 'completed', 'cancelled'
-  instance_id   TEXT DEFAULT 'round-robin', -- ID da instância WhatsApp ou 'round-robin'
+  instance_id   UUID REFERENCES whatsapp_instances(id) ON DELETE SET NULL, -- Qual whatsapp usar
   
   -- Métricas Agregadas (atualizadas em tempo real)
   total_contacts    INTEGER DEFAULT 0,
@@ -78,6 +111,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
 );
 
 -- Índices
+CREATE INDEX IF NOT EXISTS idx_campaigns_account_id ON campaigns (account_id);
 CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns (status);
 CREATE INDEX IF NOT EXISTS idx_campaigns_created_at ON campaigns (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_campaigns_user_id ON campaigns (user_id);
@@ -87,6 +121,7 @@ CREATE INDEX IF NOT EXISTS idx_campaigns_user_id ON campaigns (user_id);
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS messages_log (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  account_id      UUID REFERENCES accounts(id) ON DELETE CASCADE NOT NULL,
   
   -- Referências
   contact_id      UUID REFERENCES crm_contacts(id) ON DELETE SET NULL,
@@ -99,8 +134,7 @@ CREATE TABLE IF NOT EXISTS messages_log (
   message_final   TEXT NOT NULL,          -- Mensagem final enviada (pós-parse)
   
   -- Instância de envio
-  instance_id     TEXT,
-  instance_name   TEXT,
+  instance_id     UUID REFERENCES whatsapp_instances(id) ON DELETE SET NULL,
   
   -- Status do envio
   send_status     TEXT DEFAULT 'pending', -- 'pending', 'sent', 'delivered', 'read', 'failed', 'cancelled'
@@ -128,6 +162,7 @@ CREATE TABLE IF NOT EXISTS messages_log (
 );
 
 -- Índices para queries de métricas e busca
+CREATE INDEX IF NOT EXISTS idx_messages_log_account_id ON messages_log (account_id);
 CREATE INDEX IF NOT EXISTS idx_messages_log_contact_id ON messages_log (contact_id);
 CREATE INDEX IF NOT EXISTS idx_messages_log_campaign_id ON messages_log (campaign_id);
 CREATE INDEX IF NOT EXISTS idx_messages_log_send_status ON messages_log (send_status);
@@ -142,7 +177,8 @@ CREATE INDEX IF NOT EXISTS idx_messages_log_instance_id ON messages_log (instanc
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS ai_agents (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  agent_key       TEXT UNIQUE NOT NULL,       -- 'tira-duvidas', 'vendedor', 'auxiliar', custom
+  account_id      UUID REFERENCES accounts(id) ON DELETE CASCADE NOT NULL,
+  agent_key       TEXT NOT NULL,       -- 'tira-duvidas', 'vendedor', 'auxiliar', custom
   name            TEXT NOT NULL,
   icon            TEXT DEFAULT '🤖',
   description     TEXT,
@@ -168,34 +204,20 @@ CREATE TABLE IF NOT EXISTS ai_agents (
   
   -- Timestamps
   created_at      TIMESTAMPTZ DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ DEFAULT NOW()
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  
+  -- Um agente com a mesma chave só pode existir uma vez por conta
+  UNIQUE(account_id, agent_key)
 );
 
--- Seed: Agentes padrão
-INSERT INTO ai_agents (agent_key, name, icon, description, workspace_slug, prompt_prefix, default_mode)
-VALUES
-  ('tira-duvidas', 'Tira Dúvidas', '🧠',
-   'Especialista em esclarecer dúvidas sobre dívidas, organização financeira e como funciona a mentoria.',
-   'tira-duvidas',
-   'Instrução do Agente Tira Dúvidas: Responda como o especialista do Raio X Financeiro, tirando as dúvidas do contato de forma clara, acolhedora, objetiva e humanizada para WhatsApp.',
-   'autonomous'),
-  ('vendedor', 'Vendedor', '💼',
-   'Focado em conversão, quebra de objeções, valor da mentoria e fechamento de vendas.',
-   'vendedor',
-   'Instrução do Agente Vendedor: Responda de forma persuasiva, destacando os benefícios do Raio X Financeiro, quebrando objeções de forma amigável e incentivando o contato a dar o próximo passo para transformar suas finanças.',
-   'autonomous'),
-  ('auxiliar', 'Auxiliar', '🤝',
-   'Suporte receptivo para triagem, coleta de dados e direcionamento inicial.',
-   'auxiliar',
-   'Instrução do Agente Auxiliar: Responda de forma educada, prestativa e organizada, auxiliando o contato no que for necessário e orientando os próximos passos do atendimento.',
-   'copilot')
-ON CONFLICT (agent_key) DO NOTHING;
+CREATE INDEX IF NOT EXISTS idx_ai_agents_account_id ON ai_agents (account_id);
 
 -- ============================================================================
 -- 5. TABELA `ai_context_files` — Arquivos .md de Contexto para IA
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS ai_context_files (
   id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  account_id    UUID REFERENCES accounts(id) ON DELETE CASCADE NOT NULL,
   agent_id      UUID REFERENCES ai_agents(id) ON DELETE CASCADE,
   file_name     TEXT NOT NULL,
   file_content  TEXT NOT NULL,             -- Conteúdo Markdown completo
@@ -206,6 +228,7 @@ CREATE TABLE IF NOT EXISTS ai_context_files (
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE INDEX IF NOT EXISTS idx_ai_context_files_account_id ON ai_context_files (account_id);
 CREATE INDEX IF NOT EXISTS idx_ai_context_files_agent_id ON ai_context_files (agent_id);
 
 -- ============================================================================
@@ -213,6 +236,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_context_files_agent_id ON ai_context_files (ag
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS conversations (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  account_id      UUID REFERENCES accounts(id) ON DELETE CASCADE NOT NULL,
   contact_id      UUID REFERENCES crm_contacts(id) ON DELETE CASCADE,
   contact_phone   TEXT NOT NULL,
   contact_name    TEXT,
@@ -233,13 +257,15 @@ CREATE TABLE IF NOT EXISTS conversations (
   
   -- WhatsApp
   whatsapp_jid    TEXT,
-  instance_id     TEXT,
+  instance_id     UUID REFERENCES whatsapp_instances(id) ON DELETE SET NULL,
   
   created_at      TIMESTAMPTZ DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ DEFAULT NOW()
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(account_id, contact_phone)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_conversations_contact_phone ON conversations (contact_phone);
+CREATE INDEX IF NOT EXISTS idx_conversations_account_id ON conversations (account_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_status ON conversations (status);
 CREATE INDEX IF NOT EXISTS idx_conversations_last_message_at ON conversations (last_message_at DESC);
 
@@ -259,7 +285,7 @@ DO $$
 DECLARE
   tbl TEXT;
 BEGIN
-  FOR tbl IN SELECT unnest(ARRAY['campaigns', 'messages_log', 'ai_agents', 'ai_context_files', 'conversations'])
+  FOR tbl IN SELECT unnest(ARRAY['accounts', 'whatsapp_instances', 'crm_contacts', 'campaigns', 'messages_log', 'ai_agents', 'ai_context_files', 'conversations'])
   LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS set_updated_at ON %I', tbl);
     EXECUTE format(
@@ -270,44 +296,39 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- 8. ROW LEVEL SECURITY (RLS)
+-- 8. ROW LEVEL SECURITY (RLS) E MULTI-TENANCY
 -- ============================================================================
 
 -- Habilita RLS em todas as tabelas novas
+ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE whatsapp_instances ENABLE ROW LEVEL SECURITY;
+ALTER TABLE crm_contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_agents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_context_files ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 
--- Policies permissivas para o anon key (API do backend)
--- Em produção, trocar por policies baseadas em auth.uid()
-
-CREATE POLICY "Allow all for anon" ON crm_contacts
-  FOR ALL TO anon USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow all for anon" ON campaigns
-  FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow all for anon" ON messages_log
-  FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow all for anon" ON ai_agents
-  FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow all for anon" ON ai_context_files
-  FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow all for anon" ON conversations
-  FOR ALL USING (true) WITH CHECK (true);
+-- Exemplo de Policies baseadas na Conta (account_id)
+-- NOTA: Em produção, o ideal é pegar o account_id vinculado ao JWT (auth.uid()) ou nos claims.
+-- Como esta é uma adaptação rápida para anon permitindo multi-tenant caso o backend forneça a segurança:
+CREATE POLICY "Allow all for anon" ON accounts FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON whatsapp_instances FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON crm_contacts FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON campaigns FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON messages_log FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON ai_agents FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON ai_context_files FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON conversations FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================================================
--- 9. VIEWS ÚTEIS PARA DASHBOARD
+-- 9. VIEWS ÚTEIS PARA DASHBOARD (ATUALIZADAS PARA MULTI-TENANT)
 -- ============================================================================
 
--- Vista: Métricas resumidas por campanha
+-- Vista: Métricas resumidas por campanha e conta
 CREATE OR REPLACE VIEW campaign_metrics AS
 SELECT
+  c.account_id,
   c.id,
   c.name,
   c.status,
@@ -327,11 +348,12 @@ SELECT
   END AS reply_rate_pct
 FROM campaigns c
 LEFT JOIN messages_log ml ON ml.campaign_id = c.id
-GROUP BY c.id;
+GROUP BY c.account_id, c.id;
 
--- Vista: Engajamento por profissão
+-- Vista: Engajamento por profissão e conta
 CREATE OR REPLACE VIEW engagement_by_profession AS
 SELECT
+  p.account_id,
   p.profession,
   COUNT(DISTINCT p.id) AS total_contacts,
   COUNT(ml.id) AS total_messages,
@@ -343,13 +365,14 @@ SELECT
 FROM crm_contacts p
 LEFT JOIN messages_log ml ON ml.contact_id = p.id
 WHERE p.profession IS NOT NULL AND p.profession != ''
-GROUP BY p.profession
+GROUP BY p.account_id, p.profession
 ORDER BY reply_rate_pct DESC;
 
--- Vista: Engajamento por região
+-- Vista: Engajamento por região e conta
 CREATE OR REPLACE VIEW engagement_by_region AS
 SELECT
-  COALESCE(p.region, p.regiao_estado, 'Não informado') AS region,
+  p.account_id,
+  COALESCE(p.region, 'Não informado') AS region,
   COUNT(DISTINCT p.id) AS total_contacts,
   COUNT(ml.id) AS total_messages,
   COUNT(ml.id) FILTER (WHERE ml.reply_status != 'no_reply') AS total_replied,
@@ -359,7 +382,7 @@ SELECT
   END AS reply_rate_pct
 FROM crm_contacts p
 LEFT JOIN messages_log ml ON ml.contact_id = p.id
-GROUP BY region
+GROUP BY p.account_id, region
 ORDER BY reply_rate_pct DESC;
 
 -- ============================================================================
