@@ -23,7 +23,7 @@ O Unico CRM foi desenhado para equipes que precisam de agilidade e escalabilidad
 A tela de login possui um design "split-screen" moderno e seguro.
 
 - **Login:** Requer e-mail e senha cadastrados.
-- **Criar Conta:** Acesso restrito para e-mails do domínio `@exdevedor.com.br` (a menos que o usuário seja criado manualmente pelo administrador).
+- **Criar Conta:** Permite que qualquer usuário crie uma conta (a menos que seja bloqueado pelo administrador).
 - **Recuperação de Senha:** É feita de forma segura verificando simultaneamente o E-mail e o número de WhatsApp cadastrado. Se ambos baterem, o sistema permite redefinir a senha imediatamente.
 
 ---

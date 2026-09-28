@@ -8,42 +8,42 @@
    1. CSS CUSTOM PROPERTIES (DESIGN TOKENS)
    ============================================================================ */
 :root {
-  /* -- Brand Colors (Modern SaaS Teal) -- */
-  --brand-primary: #0d9488;
-  --brand-primary-light: #ccfbf1;
-  --brand-primary-dark: #0f766e;
-  --brand-accent: #14b8a6;
-  --brand-accent-light: #99f6e4;
+  /* -- Brand Colors (Terra Organic) -- */
+  --brand-primary: #4a7c59;
+  --brand-primary-light: #7b9c86;
+  --brand-primary-dark: #3a6245;
+  --brand-accent: #705c30;
+  --brand-accent-light: #9e8756;
 
   /* -- Surface Colors (Light Mode) -- */
-  --bg-app: #f4f7f6;
-  --bg-surface: #ffffff;
-  --bg-surface-raised: #f9fafb;
-  --bg-surface-hover: #f3f4f6;
-  --bg-surface-active: #e5e7eb;
-  --bg-sidebar: #0f172a;
-  --bg-input: #ffffff;
-  --bg-overlay: rgba(0, 0, 0, 0.4);
+  --bg-app: #faf6f0;
+  --bg-surface: #fdfbf8;
+  --bg-surface-raised: #ffffff;
+  --bg-surface-hover: #f3eee6;
+  --bg-surface-active: #e6dfd3;
+  --bg-sidebar: #2e3230;
+  --bg-input: #fdfbf8;
+  --bg-overlay: rgba(46, 50, 48, 0.4);
 
   /* -- Text Colors -- */
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-muted: #6b7280;
+  --text-primary: #2e3230;
+  --text-secondary: #575e5a;
+  --text-muted: #838a86;
   --text-inverse: #ffffff;
-  --text-link: #006a71;
+  --text-link: #4a7c59;
 
   /* -- Status Colors -- */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-info: #00dbe7;
+  --color-success: #4a7c59;
+  --color-warning: #705c30;
+  --color-danger: #a54646;
+  --color-info: #507d8a;
   --color-purple: #8b5cf6;
   --color-pink: #ec4899;
   --color-cyan: #06b6d4;
 
   /* -- Border & Divider -- */
-  --border-color: #e5e7eb;
-  --border-color-light: #f3f4f6;
+  --border-color: #e6dfd3;
+  --border-color-light: #f3eee6;
   --border-radius-sm: 8px;
   --border-radius: 12px;
   --border-radius-lg: 16px;
@@ -51,14 +51,15 @@
   --border-radius-full: 9999px;
 
   /* -- Shadows -- */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 4px 14px 0 rgba(13, 148, 136, 0.39);
+  --shadow-sm: 0 2px 4px rgba(46, 50, 48, 0.04);
+  --shadow: 0 4px 12px rgba(46, 50, 48, 0.05);
+  --shadow-md: 0 4px 20px rgba(46, 50, 48, 0.06);
+  --shadow-lg: 0 8px 32px rgba(46, 50, 48, 0.08);
+  --shadow-glow: 0 4px 14px 0 rgba(74, 124, 89, 0.39);
 
   /* -- Typography -- */
-  --font-primary: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-primary: 'Nunito Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Literata', serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --font-size-xs: 0.7rem;
   --font-size-sm: 0.8rem;

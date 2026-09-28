@@ -509,18 +509,43 @@ const server = http.createServer(async (req, res) => {
     // ========================================================================
     if (pathname === '/api/contacts' && req.method === 'GET') {
       try {
+        const cookies = parseCookies(req);
+        const emailEncoded = cookies['auth-token'];
+        if (!emailEncoded) return jsonError(res, 'Não autorizado', 401);
+        const currentUserEmail = Buffer.from(emailEncoded, 'base64').toString('utf8');
+        const currentUser = usersDB.find(u => u.email === currentUserEmail);
+        if (!currentUser) return jsonError(res, 'Usuário não encontrado', 401);
+
+        const groupId = currentUser.group_id;
+
         let crmData = [];
         let profData = [];
 
         try {
-          const { data } = await supabase.from('crm_contacts').select('*').limit(2000);
+          let query = supabase.from('crm_contacts').select('*');
+          if (groupId) {
+             query = query.or(`owner_email.eq.${currentUserEmail},group_id.eq.${groupId}`);
+          } else {
+             query = query.eq('owner_email', currentUserEmail);
+          }
+          const { data } = await query.limit(2000);
           crmData = data || [];
-        } catch (e) {}
+        } catch (e) {
+          console.error('Erro fetching crm_contacts:', e);
+        }
 
         try {
-          const { data } = await supabase.from('profiles').select('*').limit(2000);
+          let query = supabase.from('profiles').select('*');
+          if (groupId) {
+             query = query.or(`owner_email.eq.${currentUserEmail},group_id.eq.${groupId}`);
+          } else {
+             query = query.eq('owner_email', currentUserEmail);
+          }
+          const { data } = await query.limit(2000);
           profData = data || [];
-        } catch (e) {}
+        } catch (e) {
+          console.error('Erro fetching profiles:', e);
+        }
 
         const mergedMap = new Map();
 
@@ -592,6 +617,72 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    if (pathname === '/api/contacts' && req.method === 'POST') {
+      try {
+        const payload = await parseBody(req);
+        const cookies = parseCookies(req);
+        const emailEncoded = cookies['auth-token'];
+        if (!emailEncoded) return jsonError(res, 'Não autorizado', 401);
+        const currentUserEmail = Buffer.from(emailEncoded, 'base64').toString('utf8');
+        const currentUser = usersDB.find(u => u.email === currentUserEmail);
+        
+        payload.owner_email = currentUserEmail;
+        if (currentUser && currentUser.group_id) {
+          payload.group_id = currentUser.group_id;
+        }
+
+        const { data, error } = await supabase.from('crm_contacts').upsert(payload).select().single();
+        if (error) throw error;
+        
+        return json(res, { success: true, contact: data });
+      } catch (err) {
+        return jsonError(res, 'Erro ao salvar contato: ' + err.message);
+      }
+    }
+
+    if (pathname === '/api/contacts' && req.method === 'DELETE') {
+      try {
+        const payload = await parseBody(req);
+        const ids = payload.ids || [];
+        if (!ids.length) return jsonError(res, 'Nenhum ID fornecido');
+
+        const { data, error } = await supabase.from('crm_contacts').delete().in('id', ids);
+        if (error) throw error;
+        
+        return json(res, { success: true, deleted: ids.length });
+      } catch (err) {
+        return jsonError(res, 'Erro ao deletar contatos: ' + err.message);
+      }
+    }
+
+    if (pathname === '/api/contacts/import' && req.method === 'POST') {
+      try {
+        const payload = await parseBody(req);
+        let contacts = payload.contacts || [];
+        
+        const cookies = parseCookies(req);
+        const emailEncoded = cookies['auth-token'];
+        if (!emailEncoded) return jsonError(res, 'Não autorizado', 401);
+        const currentUserEmail = Buffer.from(emailEncoded, 'base64').toString('utf8');
+        const currentUser = usersDB.find(u => u.email === currentUserEmail);
+        
+        contacts = contacts.map(c => {
+          c.owner_email = currentUserEmail;
+          if (currentUser && currentUser.group_id) {
+            c.group_id = currentUser.group_id;
+          }
+          return c;
+        });
+
+        const { data, error } = await supabase.from('crm_contacts').upsert(contacts);
+        if (error) throw error;
+        
+        return json(res, { success: true, imported: contacts.length });
+      } catch (err) {
+        return jsonError(res, 'Erro ao importar contatos: ' + err.message);
+      }
+    }
+
     // ========================================================================
     // API AUTH
     // ========================================================================
@@ -599,7 +690,6 @@ const server = http.createServer(async (req, res) => {
       const payload = await parseBody(req);
       const { email, phone, password } = payload;
       if (!email || !phone || !password) return jsonError(res, 'Dados incompletos');
-      if (!email.endsWith('@exdevedor.com.br')) return jsonError(res, 'Acesso restrito');
       
       const existing = usersDB.find(u => u.email === email);
       if (existing) return jsonError(res, 'E-mail já cadastrado');

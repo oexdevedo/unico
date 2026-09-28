@@ -167,12 +167,6 @@ async function handleRegister(e) {
   const phone = document.getElementById('regPhone').value;
   const password = document.getElementById('regPassword').value;
 
-  if (!email.endsWith('@exdevedor.com.br')) {
-    showError('registerError', 'Apenas e-mails @exdevedor.com.br são permitidos');
-    setLoading('btnRegister', false);
-    return;
-  }
-
   try {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
