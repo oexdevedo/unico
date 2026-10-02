@@ -1347,7 +1347,8 @@ const App = (() => {
       const escapedPush = (cleanWhatsAppName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
       return `
-        <div class="inbox-item ${isActive ? 'active' : ''}" onclick="App.selectChat('${c.jid}', '${c.instanceId}')">
+        <div class="inbox-item ${isActive ? 'active' : ''}" onclick="App.selectChat('${c.jid}', '${c.instanceId}')" style="position:relative; padding-left: 36px;">
+          <input type="checkbox" class="inbox-bulk-check" value="${c.jid}" data-instance="${c.instanceId}" onclick="event.stopPropagation(); window.onBulkCheckToggle()" style="position:absolute; top: 50%; left: 12px; transform: translateY(-50%); z-index:2; cursor:pointer;" />
           <div class="inbox-avatar" style="border: 2px solid ${statusColor}">${initials}</div>
           <div class="inbox-item-info">
             <div class="inbox-item-name-row" style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
@@ -2615,5 +2616,49 @@ window.handleLogout = async function() {
   } catch (e) {
     console.error(e);
     window.location.href = '/login.html';
+  }
+};
+
+window.onBulkCheckToggle = function() {
+  const checked = document.querySelectorAll('.inbox-bulk-check:checked');
+  const btn = document.getElementById('btnBulkDeleteConversations');
+  if (btn) {
+    btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
+  }
+};
+
+window.toggleSelectAllConversations = function() {
+  const checkboxes = document.querySelectorAll('.inbox-bulk-check');
+  if (checkboxes.length === 0) return;
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  checkboxes.forEach(cb => cb.checked = !allChecked);
+  window.onBulkCheckToggle();
+};
+
+window.bulkDeleteConversations = async function() {
+  const checked = document.querySelectorAll('.inbox-bulk-check:checked');
+  if (checked.length === 0) return;
+  if (!confirm(`Tem certeza que deseja apagar ${checked.length} conversa(s)?`)) return;
+
+  const jids = Array.from(checked).map(cb => cb.value);
+  
+  try {
+    if (typeof WhatsAppDirect !== 'undefined' && WhatsAppDirect.deleteConversations) {
+      if (typeof showToast === 'function') showToast(`Apagando ${checked.length} conversa(s)...`, 'success');
+      
+      await WhatsAppDirect.deleteConversations(jids);
+      
+      // Remove locally from UI
+      const jidsSet = new Set(jids);
+      
+      // Access chatMessages array safely using App.getChatMessages (if exists) or modify globally if we can't
+      // We will reload page if needed, but app.js has a way to fetch again
+      if (typeof App !== 'undefined' && typeof App.init === 'function') {
+        window.location.reload(); // Simple reload as we don't have direct access to private chatMessages variable outside closure
+      }
+    }
+  } catch (e) {
+    console.error(e);
+    if (typeof showToast === 'function') showToast('Erro ao apagar conversas', 'error');
   }
 };

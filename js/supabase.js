@@ -53,68 +53,22 @@ const SupabaseModule = (() => {
   }
 
   async function fetchContacts() {
-    if (!supabaseClient) init();
-
     try {
-      let crmData = [];
-      let profilesData = [];
+      const res = await fetch('/api/contacts');
+      let data = [];
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.contacts)) {
+          data = json.contacts;
+        }
+      }
 
-      try {
-        const { data } = await supabaseClient.from('crm_contacts').select('*').order('created_at', { ascending: false });
-        crmData = data || [];
-      } catch (e) {}
-
-      try {
-        const { data } = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
-        profilesData = data || [];
-      } catch (e) {}
-
-      const mergedMap = new Map();
-
-      // Merge crm_contacts
-      crmData.forEach(item => {
-        const rawPhone = item.whatsapp || item.phone || '';
-        const digits = rawPhone.replace(/\D/g, '');
-        const keyStr = digits.length >= 8 ? digits.slice(-10) : item.id;
-        mergedMap.set(keyStr, { ...item });
-      });
-
-      // Merge profiles with higher priority for email, profession, region
-      profilesData.forEach(p => {
-        const rawPhone = p.whatsapp || p.phone || '';
-        const digits = rawPhone.replace(/\D/g, '');
-        const keyStr = digits.length >= 8 ? digits.slice(-10) : p.id;
-        const existing = mergedMap.get(keyStr) || {};
-
-        const name = (p.name || p.full_name || existing.name || existing.full_name || 'Sem Nome').trim();
-        const email = (p.email && p.email.trim()) ? p.email.trim() : (existing.email || '');
-        const profession = (p.profession && p.profession.trim() && p.profession !== 'Não informado') ? p.profession.trim() : (existing.profession || 'Não informado');
-        const region = (p.region && p.region.trim() && p.region !== 'Não informado') ? p.region.trim() : (existing.region || 'Não informado');
-        const phone = (p.whatsapp && p.whatsapp.trim()) ? p.whatsapp.trim() : (p.phone && p.phone.trim() ? p.phone.trim() : (existing.whatsapp || existing.phone || ''));
-        const rawStatus = existing.contact_status || p.contact_status || 'Vermelho';
-        const status = (rawStatus === 'Novo' || rawStatus === 'Contatado' || !['Vermelho', 'Amarelo', 'Verde'].includes(rawStatus)) ? 'Vermelho' : rawStatus;
-
-        mergedMap.set(keyStr, {
-          ...existing,
-          ...p,
-          id: existing.id || p.id,
-          name,
-          full_name: name,
-          email,
-          profession,
-          region,
-          whatsapp: phone,
-          phone,
-          contact_status: status
-        });
-      });
-
-      allContacts = Array.from(mergedMap.values()).map(item => {
-        const phone = item.whatsapp || item.phone || '';
+      allContacts = data.map(item => {
+        const phone = String(item.whatsapp || item.phone || '');
         const isValid = isValidWhatsApp(phone);
-        const name = (item.name || item.full_name || 'Sem Nome').trim();
+        const name = String(item.name || item.full_name || item.nome || 'Sem Nome').trim();
         const firstName = name.split(' ')[0] || name;
-        const rawStatus = item.contact_status || 'Vermelho';
+        const rawStatus = item.contact_status || item.status || 'Vermelho';
         const status = (rawStatus === 'Novo' || rawStatus === 'Contatado' || !['Vermelho', 'Amarelo', 'Verde'].includes(rawStatus)) ? 'Vermelho' : rawStatus;
 
         return {

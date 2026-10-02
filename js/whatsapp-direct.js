@@ -148,6 +148,15 @@ const WhatsAppDirect = (() => {
     return await res.json();
   }
 
+  async function deleteConversations(jids, instanceId = null) {
+    const res = await fetch('/api/whatsapp/delete-conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jids, instanceId })
+    });
+    return await res.json();
+  }
+
   async function getProfilePicture(jid, instanceId = null) {
     try {
       const params = new URLSearchParams({ jid });
@@ -161,6 +170,6 @@ const WhatsAppDirect = (() => {
   return {
     init, onNewMessage, fetchStatus, fetchInstances,
     createInstance, deleteInstance, renameInstance, logoutInstance, toggleInstance,
-    sendMessage, sendMediaMessage, fetchMessages, deleteConversation, getProfilePicture
+    sendMessage, sendMediaMessage, fetchMessages, deleteConversation, deleteConversations, getProfilePicture
   };
 })();

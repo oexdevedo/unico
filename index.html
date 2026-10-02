@@ -424,7 +424,13 @@
             <!-- Conversations List -->
             <div class="inbox-list">
               <div class="inbox-list-header">
-                <h3 style="font-weight: 800; margin-bottom: 16px; font-size: 18px;">Interactions</h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                  <h3 style="font-weight: 800; font-size: 18px; margin:0;">Interactions</h3>
+                  <div style="display:flex; gap: 8px;">
+                    <button type="button" class="btn-inbox-add-agenda" id="btnSelectAllConversations" title="Selecionar Todos" onclick="toggleSelectAllConversations()" style="padding: 4px 8px; background:var(--bg-surface-raised); border:1px solid var(--border-color); cursor:pointer;"><i class="ti ti-checks"></i></button>
+                    <button type="button" class="btn-inbox-add-agenda" id="btnBulkDeleteConversations" title="Deletar Selecionados" onclick="bulkDeleteConversations()" style="display:none; padding: 4px 8px; background:var(--bg-surface-raised); border:1px solid var(--border-color); color:#ef4444; cursor:pointer;"><i class="ti ti-trash"></i></button>
+                  </div>
+                </div>
                 <div class="top-search-wrapper" style="margin:0; background: #ffffff; border-radius: 999px; padding: 4px 12px; display: flex; align-items: center; border: 1px solid var(--border-color-light);">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2">
                     <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>

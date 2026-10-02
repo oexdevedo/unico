@@ -1034,6 +1034,30 @@ function deleteConversation(targetJid, instanceId = null) {
   return { success: true, jid: cleanTarget, countDeleted: beforeCount - receivedMessages.length };
 }
 
+function deleteConversations(targetJids, instanceId = null) {
+  if (!Array.isArray(targetJids) || targetJids.length === 0) return { success: false, error: 'JIDs inválidos' };
+  
+  const cleanTargets = targetJids.map(jid => String(jid).trim());
+  const cleanPhones = cleanTargets.map(jid => jid.split('@')[0]);
+  
+  const beforeCount = receivedMessages.length;
+
+  receivedMessages = receivedMessages.filter(m => {
+    if (instanceId && m.instanceId !== instanceId) return true;
+    
+    for (let i = 0; i < cleanTargets.length; i++) {
+      if (m.remoteJid === cleanTargets[i] || m.remoteJid === cleanPhones[i] ||
+          m.phone === cleanTargets[i] || m.phone === cleanPhones[i]) {
+        return false; // delete this message
+      }
+    }
+    return true; // keep this message
+  });
+
+  saveMessagesToDisk();
+  return { success: true, countDeleted: beforeCount - receivedMessages.length };
+}
+
 function deleteMessage(messageId) {
   if (!messageId) return { success: false, error: 'ID inválido' };
   const beforeCount = receivedMessages.length;
@@ -1096,7 +1120,7 @@ module.exports = {
   renameInstance, logoutInstance, toggleInstance,
   getConnectedInstances, getNextRoundRobinInstance,
   sendTextMessage, sendMediaMessage, resolveJid, resolveRealPhone,
-  getMessages, deleteConversation, deleteMessage, clearMessages,
+  getMessages, deleteConversation, deleteConversations, deleteMessage, clearMessages,
   getStatus, getProfilePicture,
   on, emit,
   logout: () => logoutInstance('default')

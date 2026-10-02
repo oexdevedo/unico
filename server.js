@@ -22,19 +22,8 @@ const PORT = process.env.PORT || 4444;
 // ============================================================================
 // AUTH CONFIGURATION
 // ============================================================================
-const AUTH_FILE = path.join(__dirname, 'users.json');
-let usersDB = [];
+// Local JSON auth removed in favor of Supabase app_users table.
 let passwordTokens = {}; // email -> code
-
-try {
-  if (fs.existsSync(AUTH_FILE)) {
-    usersDB = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8'));
-  }
-} catch (e) { console.error('Erro ao ler users.json'); }
-
-function saveUsers() {
-  fs.writeFileSync(AUTH_FILE, JSON.stringify(usersDB, null, 2), 'utf8');
-}
 
 // LISTS CONFIGURATION
 const LISTS_FILE = path.join(__dirname, 'lists.json');
@@ -469,13 +458,24 @@ const server = http.createServer(async (req, res) => {
     // API DISPATCH LOGS
     // ========================================================================
     if (pathname === '/api/dispatch-logs' && req.method === 'GET') {
-      return json(res, dispatchLogsDB);
+      const cookies = parseCookies(req);
+      const emailEncoded = cookies['auth-token'];
+      if (!emailEncoded) return jsonError(res, 'Não autorizado', 401);
+      const currentUserEmail = Buffer.from(emailEncoded, 'base64').toString('utf8');
+      
+      const userLogs = dispatchLogsDB.filter(log => !log.owner_email || log.owner_email === currentUserEmail);
+      return json(res, userLogs);
     }
 
     if (pathname === '/api/dispatch-logs' && req.method === 'POST') {
+      const cookies = parseCookies(req);
+      const emailEncoded = cookies['auth-token'];
+      const currentUserEmail = emailEncoded ? Buffer.from(emailEncoded, 'base64').toString('utf8') : null;
+      
       const body = await parseBody(req);
       if (Array.isArray(body)) {
-        dispatchLogsDB.unshift(...body);
+        const enriched = body.map(b => ({ ...b, owner_email: currentUserEmail }));
+        dispatchLogsDB.unshift(...enriched);
       } else if (body && typeof body === 'object') {
         dispatchLogsDB.unshift({
           id: body.id || `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
@@ -488,11 +488,12 @@ const server = http.createServer(async (req, res) => {
           status: body.status || 'success', // 'success' | 'error'
           errorReason: body.errorReason || null,
           instanceName: body.instanceName || 'WhatsApp Linha 1',
-          campaignName: body.campaignName || 'Disparo Direto'
+          campaignName: body.campaignName || 'Disparo Direto',
+          owner_email: currentUserEmail
         });
       }
-      if (dispatchLogsDB.length > 2000) {
-        dispatchLogsDB = dispatchLogsDB.slice(0, 2000);
+      if (dispatchLogsDB.length > 5000) {
+        dispatchLogsDB = dispatchLogsDB.slice(0, 5000);
       }
       saveDispatchLogs();
       return json(res, { success: true, count: dispatchLogsDB.length });
@@ -513,7 +514,7 @@ const server = http.createServer(async (req, res) => {
         const emailEncoded = cookies['auth-token'];
         if (!emailEncoded) return jsonError(res, 'Não autorizado', 401);
         const currentUserEmail = Buffer.from(emailEncoded, 'base64').toString('utf8');
-        const currentUser = usersDB.find(u => u.email === currentUserEmail);
+        const { data: currentUser } = await supabase.from('app_users').select('*').eq('email', currentUserEmail).single();
         if (!currentUser) return jsonError(res, 'Usuário não encontrado', 401);
 
         const groupId = currentUser.group_id;
@@ -522,29 +523,19 @@ const server = http.createServer(async (req, res) => {
         let profData = [];
 
         try {
+          const userRole = currentUser ? currentUser.role : 'user';
           let query = supabase.from('crm_contacts').select('*');
-          if (groupId) {
-             query = query.or(`owner_email.eq.${currentUserEmail},group_id.eq.${groupId}`);
-          } else {
-             query = query.eq('owner_email', currentUserEmail);
+          if (userRole !== 'admin') {
+            if (groupId) {
+               query = query.or(`owner_email.eq.${currentUserEmail},group_id.eq.${groupId}`);
+            } else {
+               query = query.eq('owner_email', currentUserEmail);
+            }
           }
           const { data } = await query.limit(2000);
           crmData = data || [];
         } catch (e) {
           console.error('Erro fetching crm_contacts:', e);
-        }
-
-        try {
-          let query = supabase.from('profiles').select('*');
-          if (groupId) {
-             query = query.or(`owner_email.eq.${currentUserEmail},group_id.eq.${groupId}`);
-          } else {
-             query = query.eq('owner_email', currentUserEmail);
-          }
-          const { data } = await query.limit(2000);
-          profData = data || [];
-        } catch (e) {
-          console.error('Erro fetching profiles:', e);
         }
 
         const mergedMap = new Map();
@@ -624,7 +615,7 @@ const server = http.createServer(async (req, res) => {
         const emailEncoded = cookies['auth-token'];
         if (!emailEncoded) return jsonError(res, 'Não autorizado', 401);
         const currentUserEmail = Buffer.from(emailEncoded, 'base64').toString('utf8');
-        const currentUser = usersDB.find(u => u.email === currentUserEmail);
+        const { data: currentUser } = await supabase.from('app_users').select('*').eq('email', currentUserEmail).single();
         
         payload.owner_email = currentUserEmail;
         if (currentUser && currentUser.group_id) {
@@ -664,7 +655,7 @@ const server = http.createServer(async (req, res) => {
         const emailEncoded = cookies['auth-token'];
         if (!emailEncoded) return jsonError(res, 'Não autorizado', 401);
         const currentUserEmail = Buffer.from(emailEncoded, 'base64').toString('utf8');
-        const currentUser = usersDB.find(u => u.email === currentUserEmail);
+        const { data: currentUser } = await supabase.from('app_users').select('*').eq('email', currentUserEmail).single();
         
         contacts = contacts.map(c => {
           c.owner_email = currentUserEmail;
@@ -691,11 +682,10 @@ const server = http.createServer(async (req, res) => {
       const { email, phone, password } = payload;
       if (!email || !phone || !password) return jsonError(res, 'Dados incompletos');
       
-      const existing = usersDB.find(u => u.email === email);
+      const { data: existing } = await supabase.from('app_users').select('*').eq('email', email).maybeSingle();
       if (existing) return jsonError(res, 'E-mail já cadastrado');
       
-      usersDB.push({ email, phone, password });
-      saveUsers();
+      await supabase.from('app_users').insert({ email, phone, password });
       return json(res, { success: true });
     }
 
@@ -705,18 +695,22 @@ const server = http.createServer(async (req, res) => {
       const { email, phone, password } = payload;
       if (!email || !phone || !password) return jsonError(res, 'Dados incompletos');
       
-      const existing = usersDB.find(u => u.email === email);
+      const { data: existing } = await supabase.from('app_users').select('*').eq('email', email).maybeSingle();
       if (existing) return jsonError(res, 'E-mail já cadastrado');
       
-      usersDB.push({ email, phone, password });
-      saveUsers();
+      await supabase.from('app_users').insert({ email, phone, password });
       return json(res, { success: true });
     }
 
     if (pathname === '/api/auth/login' && req.method === 'POST') {
       const payload = await parseBody(req);
-      const user = usersDB.find(u => u.email === payload.email && u.password === payload.password);
+      const { data: user, error } = await supabase.from('app_users').select('*').eq('email', payload.email).eq('password', payload.password).maybeSingle();
+      if (error) {
+        console.error("Login error:", error);
+        return jsonError(res, 'DB_ERR: ' + error.message, 401);
+      }
       if (!user) return jsonError(res, 'Credenciais inválidas', 401);
+
       
       const token = Buffer.from(user.email).toString('base64');
       res.setHeader('Set-Cookie', `auth-token=${token}; Path=/; HttpOnly; Max-Age=86400`);
@@ -725,7 +719,7 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/auth/recover' && req.method === 'POST') {
       const payload = await parseBody(req);
-      const user = usersDB.find(u => u.email === payload.email);
+      const { data: user } = await supabase.from('app_users').select('*').eq('email', payload.email).maybeSingle();
       if (!user) return jsonError(res, 'Usuário não encontrado');
       
       // Verifica se o WhatsApp fornecido bate com o do banco de dados (ignorando espaços/traços)
@@ -747,10 +741,9 @@ const server = http.createServer(async (req, res) => {
       const { email, token, newPassword } = payload;
       if (passwordTokens[email] !== token) return jsonError(res, 'Token inválido');
       
-      const user = usersDB.find(u => u.email === email);
+      const { data: user } = await supabase.from('app_users').select('*').eq('email', email).maybeSingle();
       if (user) {
-        user.password = newPassword;
-        saveUsers();
+        await supabase.from('app_users').update({ password: newPassword }).eq('email', email);
         delete passwordTokens[email];
         return json(res, { success: true });
       }
@@ -865,7 +858,44 @@ const server = http.createServer(async (req, res) => {
     // Mensagens
     if (pathname === '/api/whatsapp/messages' && req.method === 'GET') {
       const instanceId = parsedUrl.searchParams.get('instanceId') || null;
-      const messages = whatsappClient.getMessages({ instanceId });
+      let messages = whatsappClient.getMessages({ instanceId });
+      
+      try {
+        const cookies = parseCookies(req);
+        const emailEncoded = cookies['auth-token'];
+        if (emailEncoded) {
+          const currentUserEmail = Buffer.from(emailEncoded, 'base64').toString('utf8');
+          const { data: user } = await supabase.from('app_users').select('*').eq('email', currentUserEmail).single();
+          const groupId = user ? user.group_id : null;
+          const userRole = user ? user.role : 'user';
+          
+          if (userRole !== 'admin') {
+            const { data: allContacts } = await supabase.from('crm_contacts').select('phone, owner_email, group_id');
+            const contactsMap = new Map();
+            (allContacts || []).forEach(c => {
+              if (c.phone) {
+                contactsMap.set(c.phone.replace(/\D/g, ''), { owner_email: c.owner_email, group_id: c.group_id });
+              }
+            });
+            
+            messages = messages.filter(m => {
+              const num = (m.remoteJid || '').split('@')[0];
+              const contact = contactsMap.get(num);
+              
+              if (!contact) return true; // Contato novo (não está na agenda de ninguém), mostra para todos (ou equipe de triagem)
+              
+              if (contact.owner_email === currentUserEmail) return true;
+              if (groupId && contact.group_id === groupId) return true;
+              if (!contact.owner_email && !contact.group_id) return true; // Contato sem dono
+              
+              return false; // Pertence a outro usuário/grupo
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Error filtering messages for user:', e);
+      }
+      
       return json(res, { success: true, messages, total: messages.length });
     }
 
@@ -896,6 +926,13 @@ const server = http.createServer(async (req, res) => {
       const payload = await parseBody(req);
       if (!payload.jid) return jsonError(res, '"jid" é obrigatório.');
       return json(res, whatsappClient.deleteConversation(payload.jid, payload.instanceId));
+    }
+
+    // Excluir múltiplas conversas
+    if (pathname === '/api/whatsapp/delete-conversations' && req.method === 'POST') {
+      const payload = await parseBody(req);
+      if (!payload.jids || !Array.isArray(payload.jids)) return jsonError(res, '"jids" é obrigatório e deve ser um array.');
+      return json(res, whatsappClient.deleteConversations(payload.jids, payload.instanceId));
     }
 
     // Excluir mensagem
@@ -1221,7 +1258,11 @@ const server = http.createServer(async (req, res) => {
         // Verifica se token corresponde a algum usuário válido
         const emailBase64 = cookies['auth-token'];
         const emailDecoded = Buffer.from(emailBase64, 'base64').toString('ascii');
-        const userExists = usersDB.find(u => u.email === emailDecoded);
+        let userExists = null;
+        try {
+          const { data } = await supabase.from('app_users').select('email').eq('email', emailDecoded).maybeSingle();
+          userExists = data;
+        } catch (e) {}
         
         if (!userExists) {
           res.writeHead(302, { Location: '/login.html' });
