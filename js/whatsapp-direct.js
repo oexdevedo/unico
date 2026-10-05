@@ -7,8 +7,24 @@ const WhatsAppDirect = (() => {
   let pollingInterval = null;
   let lastMessageCount = 0;
   const messageCallbacks = [];
+  const statusCallbacks = [];
+  let sseSource = null;
 
   function init() {
+    // SSE Stream for Real-time WhatsApp Status updates
+    if (sseSource) sseSource.close();
+    sseSource = new EventSource('/api/whatsapp/stream-status');
+    sseSource.onmessage = (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        if (payload.type === 'status_update') {
+          for (const cb of statusCallbacks) {
+            try { cb(payload.data); } catch (err) {}
+          }
+        }
+      } catch (err) {}
+    };
+
     // Start polling for new messages every 3 seconds
     if (pollingInterval) clearInterval(pollingInterval);
     pollingInterval = setInterval(async () => {
@@ -33,6 +49,10 @@ const WhatsAppDirect = (() => {
 
   function onNewMessage(callback) {
     if (typeof callback === 'function') messageCallbacks.push(callback);
+  }
+
+  function onStatusUpdate(callback) {
+    if (typeof callback === 'function') statusCallbacks.push(callback);
   }
 
   async function fetchStatus() {
@@ -168,7 +188,7 @@ const WhatsAppDirect = (() => {
   }
 
   return {
-    init, onNewMessage, fetchStatus, fetchInstances,
+    init, onNewMessage, onStatusUpdate, fetchStatus, fetchInstances,
     createInstance, deleteInstance, renameInstance, logoutInstance, toggleInstance,
     sendMessage, sendMediaMessage, fetchMessages, deleteConversation, deleteConversations, getProfilePicture
   };

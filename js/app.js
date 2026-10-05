@@ -20,6 +20,14 @@ const App = (() => {
     // Initialize modules
     SupabaseModule.init();
     WhatsAppDirect.init();
+    
+    // Auto refresh instances view on WebSocket (SSE) event
+    WhatsAppDirect.onStatusUpdate(() => {
+      if (currentTab === 'tab-settings') {
+        refreshInstances();
+      }
+    });
+
     if (window.ABTestModule) ABTestModule.init();
 
     // Setup event listeners

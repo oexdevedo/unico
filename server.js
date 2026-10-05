@@ -791,6 +791,26 @@ const server = http.createServer(async (req, res) => {
     // API WHATSAPP
     // ========================================================================
 
+    // SSE Stream Real-time Status
+    if (pathname === '/api/whatsapp/stream-status' && req.method === 'GET') {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+      });
+      res.write('retry: 5000\n\n');
+      
+      const pingInterval = setInterval(() => res.write(':ping\n\n'), 15000);
+      global.sseClients = global.sseClients || [];
+      global.sseClients.push(res);
+      
+      req.on('close', () => {
+        clearInterval(pingInterval);
+        global.sseClients = global.sseClients.filter(c => c !== res);
+      });
+      return;
+    }
+
     // Status Geral
     if (pathname === '/api/whatsapp/status' && req.method === 'GET') {
       return json(res, whatsappClient.getStatus());
@@ -1343,6 +1363,12 @@ server.listen(PORT, async () => {
   console.log(`🚀 Unico — CRM WhatsApp Multi-Agentes`);
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log(`======================================================\n`);
+
+  global.sseClients = global.sseClients || [];
+  whatsappClient.on('onStatusUpdate', (data) => {
+    const payload = JSON.stringify({ type: 'status_update', data });
+    global.sseClients.forEach(client => client.write(`data: ${payload}\n\n`));
+  });
 
   await whatsappClient.initWhatsApp();
 });
