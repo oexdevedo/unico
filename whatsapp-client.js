@@ -459,6 +459,7 @@ function getInstancesList(userEmail, userRole) {
       connected: !config.disabled && runtime.status === 'connected',
       qrCode: config.disabled ? null : runtime.qrCode,
       user: runtime.user,
+      owner_email: config.owner_email,
       unreadCount,
       totalMessages: instanceMessages.length,
       createdAt: config.createdAt

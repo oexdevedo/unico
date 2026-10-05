@@ -937,6 +937,9 @@ const server = http.createServer(async (req, res) => {
           const userRole = user ? user.role : 'user';
           
           if (userRole !== 'admin') {
+            const instancesConfig = whatsappClient.getInstancesList();
+            const instanceOwners = new Map(instancesConfig.map(i => [i.id, i.owner_email]));
+
             const { data: allContacts } = await supabase.from('crm_contacts').select('phone, owner_email, group_id');
             const contactsMap = new Map();
             (allContacts || []).forEach(c => {
@@ -946,6 +949,12 @@ const server = http.createServer(async (req, res) => {
             });
             
             messages = messages.filter(m => {
+              const msgInstanceOwner = instanceOwners.get(m.instanceId);
+              // Se a instância de onde veio a mensagem for de outro usuário, não exibe
+              if (msgInstanceOwner && msgInstanceOwner !== currentUserEmail) return false;
+              // Se o dono da instância é o usuário atual, exibe tudo dessa instância
+              if (msgInstanceOwner === currentUserEmail) return true;
+
               const num = (m.remoteJid || '').split('@')[0];
               const contact = contactsMap.get(num);
               
