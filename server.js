@@ -142,7 +142,7 @@ function parseCookies(request) {
 // SUPABASE SERVER-SIDE CLIENT
 // ============================================================================
 const supabaseUrl = process.env.SUPABASE_URL || 'https://iwpveyworwdymlzdmloq.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3cHZleXdvcndkeW1semRtbG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjcyNjksImV4cCI6MjA5MjUwMzI2OX0.8HyxCqcwQTc7-EFZQqOJbLr18h79dn6Ywyk1oDphaCI';
 let supabase = null;
 
 try {
