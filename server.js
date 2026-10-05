@@ -506,6 +506,29 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ========================================================================
+    // API USERS (ADMIN ONLY)
+    // ========================================================================
+    if (pathname === '/api/users' && req.method === 'GET') {
+      const authCookie = (req.headers.cookie || '').split('; ').find(c => c.startsWith('auth-token='));
+      if (!authCookie) return jsonError(res, 'Não autorizado', 401);
+
+      const tokenStr = authCookie.split('=')[1];
+      const userEmail = Buffer.from(tokenStr, 'base64').toString('utf8');
+
+      // Check if user is admin
+      const { data: currentUser, error: errUser } = await supabase.from('app_users').select('*').eq('email', userEmail).maybeSingle();
+      if (errUser || !currentUser) return jsonError(res, 'Usuário não encontrado', 401);
+      if (currentUser.role !== 'admin') return jsonError(res, 'Acesso negado. Apenas administradores podem ver os usuários.', 403);
+
+      const { data: users, error } = await supabase.from('app_users').select('id, email, phone, role, group_id, created_at');
+      if (error) {
+        console.error('Fetch users error:', error);
+        return jsonError(res, 'Erro ao buscar usuários', 500);
+      }
+      return json(res, { success: true, users: users || [] });
+    }
+
+    // ========================================================================
     // API CONTACTS (proxy para Supabase)
     // ========================================================================
     if (pathname === '/api/contacts' && req.method === 'GET') {
@@ -682,10 +705,19 @@ const server = http.createServer(async (req, res) => {
       const { email, phone, password } = payload;
       if (!email || !phone || !password) return jsonError(res, 'Dados incompletos');
       
-      const { data: existing } = await supabase.from('app_users').select('*').eq('email', email).maybeSingle();
+      const { data: existing, error: fetchErr } = await supabase.from('app_users').select('*').eq('email', email).maybeSingle();
+      if (fetchErr) {
+        console.error('Fetch error during register:', fetchErr);
+        return jsonError(res, 'DB_ERR: ' + fetchErr.message);
+      }
       if (existing) return jsonError(res, 'E-mail já cadastrado');
       
-      await supabase.from('app_users').insert({ email, phone, password });
+      const { error: insertErr } = await supabase.from('app_users').insert({ email, phone, password });
+      if (insertErr) {
+        console.error('Insert error during register:', insertErr);
+        return jsonError(res, 'DB_ERR: ' + insertErr.message);
+      }
+      
       return json(res, { success: true });
     }
 
@@ -766,46 +798,61 @@ const server = http.createServer(async (req, res) => {
 
     // Listar instâncias
     if (pathname === '/api/whatsapp/instances' && req.method === 'GET') {
-      const instances = whatsappClient.getInstancesList();
+      const authCookie = (req.headers.cookie || '').split('; ').find(c => c.startsWith('auth-token='));
+      if (!authCookie) return jsonError(res, 'Não autorizado', 401);
+      const userEmail = Buffer.from(authCookie.split('=')[1], 'base64').toString('utf8');
+      const { data: user } = await supabase.from('app_users').select('*').eq('email', userEmail).maybeSingle();
+
+      const instances = whatsappClient.getInstancesList(userEmail, user ? user.role : 'user');
       return json(res, { success: true, count: instances.length, instances });
     }
 
     // Criar instância
     if (pathname === '/api/whatsapp/instances' && req.method === 'POST') {
+      const authCookie = (req.headers.cookie || '').split('; ').find(c => c.startsWith('auth-token='));
+      if (!authCookie) return jsonError(res, 'Não autorizado', 401);
+      const userEmail = Buffer.from(authCookie.split('=')[1], 'base64').toString('utf8');
+
       const payload = await parseBody(req);
-      const result = await whatsappClient.createInstance({ name: payload.name, color: payload.color });
+      const result = await whatsappClient.createInstance({ name: payload.name, color: payload.color, owner_email: userEmail });
       return json(res, result, 201);
     }
 
     // Operações em instância individual
     if (pathname.startsWith('/api/whatsapp/instances/') && pathname.length > 24) {
+      const authCookie = (req.headers.cookie || '').split('; ').find(c => c.startsWith('auth-token='));
+      if (!authCookie) return jsonError(res, 'Não autorizado', 401);
+      const userEmail = Buffer.from(authCookie.split('=')[1], 'base64').toString('utf8');
+      const { data: user } = await supabase.from('app_users').select('*').eq('email', userEmail).maybeSingle();
+      const userRole = user ? user.role : 'user';
+
       const parts = pathname.replace('/api/whatsapp/instances/', '').split('/');
       const instanceId = parts[0];
       const subAction = parts[1];
 
       if (!subAction && req.method === 'GET') {
-        const instance = whatsappClient.getInstance(instanceId);
+        const instance = whatsappClient.getInstance(instanceId, userEmail, userRole);
         if (!instance) return jsonError(res, 'Instância não encontrada', 404);
         return json(res, { success: true, instance });
       }
 
       if (!subAction && req.method === 'PUT') {
         const payload = await parseBody(req);
-        return json(res, whatsappClient.renameInstance(instanceId, payload));
+        return json(res, whatsappClient.renameInstance(instanceId, payload, userEmail, userRole));
       }
 
       if (subAction === 'logout' && req.method === 'POST') {
-        return json(res, await whatsappClient.logoutInstance(instanceId));
+        return json(res, await whatsappClient.logoutInstance(instanceId, userEmail, userRole));
       }
 
       if (subAction === 'toggle' && req.method === 'POST') {
         const payload = await parseBody(req);
         const enabled = payload.enabled !== undefined ? !!payload.enabled : true;
-        return json(res, await whatsappClient.toggleInstance(instanceId, enabled));
+        return json(res, await whatsappClient.toggleInstance(instanceId, enabled, userEmail, userRole));
       }
 
       if (!subAction && req.method === 'DELETE') {
-        return json(res, await whatsappClient.deleteInstance(instanceId));
+        return json(res, await whatsappClient.deleteInstance(instanceId, userEmail, userRole));
       }
     }
 

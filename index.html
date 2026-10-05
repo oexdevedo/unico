@@ -184,11 +184,19 @@
 
       </nav>
 
-      <div class="sidebar-footer" style="padding: 24px 0; display: flex; justify-content: center;">
+      <div class="sidebar-footer" style="padding: 24px 0; display: flex; flex-direction: column; gap: 8px; align-items: center;">
         <button class="tab-btn" data-tab="tab-settings" id="navSettings" title="Configurações" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        <button class="tab-btn" data-tab="tab-users" id="navUsers" title="Usuários (Admin)" style="justify-content: center; width: 48px; height: 48px; border-radius: 12px; padding: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
           </svg>
         </button>
       </div>
@@ -1363,6 +1371,46 @@
                 <div style="background: rgba(255,255,255,0.05); border-radius: 8px; height: 16px; width: 100%; overflow: hidden;">
                   <div id="abBarFillB" style="background: var(--warning-color); height: 100%; width: 0%; transition: width 0.5s ease;"></div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: USUÁRIOS (ADMIN) -->
+        <!-- ============================================================ -->
+        <div class="tab-panel bg-transparent font-sans relative" id="tab-users" style="min-height: 100%; border-radius: 12px; overflow: hidden; padding: 24px;">
+          <div class="flex flex-col gap-6 z-10 relative">
+            <header class="flex justify-between items-end shrink-0 pt-2">
+              <div>
+                <h1 class="font-headline-xl text-headline-xl text-on-surface m-0">Usuários</h1>
+                <p class="font-body-md text-body-md text-on-surface-variant mt-1 m-0">Lista de usuários do sistema (Somente Administradores).</p>
+              </div>
+              <button class="btn-main" onclick="loadAdminUsers()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M21 13a9 9 0 1 1-3-7.7L21 8"></path></svg>
+                <span class="btn-text">Atualizar</span>
+              </button>
+            </header>
+
+            <div class="bg-surface-glass backdrop-blur-[20px] border border-border-glass rounded-xl p-4 shadow-2xl relative overflow-hidden">
+              <div id="usersLoading" style="display:none; text-align: center; padding: 20px;">Carregando usuários...</div>
+              <div id="usersError" class="error-msg" style="display:none;"></div>
+              
+              <div class="table-container" style="overflow-x: auto;">
+                <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--border-glass);">
+                      <th style="padding: 12px; font-weight: 600; color: var(--on-surface-variant);">ID</th>
+                      <th style="padding: 12px; font-weight: 600; color: var(--on-surface-variant);">E-mail</th>
+                      <th style="padding: 12px; font-weight: 600; color: var(--on-surface-variant);">WhatsApp</th>
+                      <th style="padding: 12px; font-weight: 600; color: var(--on-surface-variant);">Role</th>
+                      <th style="padding: 12px; font-weight: 600; color: var(--on-surface-variant);">Group ID</th>
+                      <th style="padding: 12px; font-weight: 600; color: var(--on-surface-variant);">Criado em</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody">
+                    <!-- Preenchido via JS -->
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

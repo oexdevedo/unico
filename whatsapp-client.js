@@ -439,8 +439,11 @@ function clearAuthFiles(authDir) {
 // CRUD DE INSTÂNCIAS
 // ============================================================================
 
-function getInstancesList() {
-  const configs = loadInstancesConfig();
+function getInstancesList(userEmail, userRole) {
+  let configs = loadInstancesConfig();
+  if (userEmail) {
+    configs = configs.filter(c => c.owner_email === userEmail);
+  }
   return configs.map(config => {
     const runtime = runtimeInstances.get(config.id) || { status: config.disabled ? 'disabled' : 'disconnected', qrCode: null, user: null };
     const instanceMessages = receivedMessages.filter(m => m.instanceId === config.id);
@@ -463,7 +466,7 @@ function getInstancesList() {
   });
 }
 
-async function createInstance({ name, color }) {
+async function createInstance({ name, color, owner_email }) {
   const configs = loadInstancesConfig();
   const newId = `inst_${Date.now()}`;
   const cleanName = (name && name.trim()) || `WhatsApp ${configs.length + 1}`;
@@ -471,6 +474,7 @@ async function createInstance({ name, color }) {
 
   const newConfig = {
     id: newId, name: cleanName, color: chosenColor,
+    owner_email: owner_email || null,
     authFolder: `inst_${newId}`, isDefault: false, disabled: false,
     createdAt: new Date().toISOString()
   };
@@ -490,10 +494,11 @@ async function createInstance({ name, color }) {
   };
 }
 
-async function toggleInstance(instanceId, enabled) {
+async function toggleInstance(instanceId, enabled, userEmail, userRole) {
   const configs = loadInstancesConfig();
   const config = configs.find(c => c.id === instanceId);
   if (!config) throw new Error(`Instância ${instanceId} não encontrada.`);
+  if (config.owner_email !== userEmail) throw new Error('Acesso negado.');
 
   config.disabled = !enabled;
   saveInstancesConfig(configs);
@@ -523,10 +528,11 @@ async function toggleInstance(instanceId, enabled) {
   }
 }
 
-async function deleteInstance(instanceId) {
+async function deleteInstance(instanceId, userEmail, userRole) {
   let configs = loadInstancesConfig();
   const target = configs.find(c => c.id === instanceId);
   if (!target) throw new Error(`Instância ${instanceId} não encontrada.`);
+  if (target.owner_email !== userEmail) throw new Error('Acesso negado.');
 
   const runtime = runtimeInstances.get(instanceId);
   if (runtime?.sock) {
@@ -556,10 +562,11 @@ async function deleteInstance(instanceId) {
   return { success: true, instanceId };
 }
 
-function renameInstance(instanceId, { name, color }) {
+function renameInstance(instanceId, { name, color }, userEmail, userRole) {
   const configs = loadInstancesConfig();
   const config = configs.find(c => c.id === instanceId);
   if (!config) throw new Error(`Instância ${instanceId} não encontrada.`);
+  if (config.owner_email !== userEmail) throw new Error('Acesso negado.');
 
   if (name?.trim()) config.name = name.trim();
   if (color?.trim()) config.color = color.trim();
@@ -573,10 +580,11 @@ function renameInstance(instanceId, { name, color }) {
   return { success: true, instance: config };
 }
 
-async function logoutInstance(instanceId) {
+async function logoutInstance(instanceId, userEmail, userRole) {
   const configs = loadInstancesConfig();
   const config = configs.find(c => c.id === instanceId);
   if (!config) throw new Error(`Instância ${instanceId} não encontrada.`);
+  if (config.owner_email !== userEmail) throw new Error('Acesso negado.');
 
   const runtime = runtimeInstances.get(instanceId);
   if (runtime?.sock) {
@@ -595,10 +603,11 @@ async function logoutInstance(instanceId) {
   return { success: true, message: `"${config.name}" desconectado. Novo QR Code será gerado.` };
 }
 
-function getInstance(instanceId) {
+function getInstance(instanceId, userEmail, userRole) {
   const configs = loadInstancesConfig();
   const config = configs.find(c => c.id === instanceId);
   if (!config) return null;
+  if (config.owner_email !== userEmail) return null;
   const runtime = runtimeInstances.get(instanceId) || { status: 'disconnected', qrCode: null, user: null };
   return { ...config, status: runtime.status, connected: runtime.status === 'connected', qrCode: runtime.qrCode, user: runtime.user };
 }

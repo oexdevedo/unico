@@ -130,6 +130,9 @@ const App = (() => {
         LogsModule.fetchAndRenderLogs();
       }
     }
+    if (tabId === 'tab-users') {
+      window.loadAdminUsers();
+    }
   }
 
   // ========================================================================
@@ -2660,5 +2663,52 @@ window.bulkDeleteConversations = async function() {
   } catch (e) {
     console.error(e);
     if (typeof showToast === 'function') showToast('Erro ao apagar conversas', 'error');
+  }
+};
+
+// ========================================================================
+// ADMIN USERS MODULE
+// ========================================================================
+window.loadAdminUsers = async function() {
+  const loading = document.getElementById('usersLoading');
+  const errorMsg = document.getElementById('usersError');
+  const tbody = document.getElementById('usersTableBody');
+  
+  if(loading) loading.style.display = 'block';
+  if(errorMsg) errorMsg.style.display = 'none';
+  if(tbody) tbody.innerHTML = '';
+  
+  try {
+    const res = await fetch('/api/users');
+    const data = await res.json();
+    
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Erro desconhecido');
+    }
+    
+    if (tbody) {
+      if (!data.users || data.users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 12px; text-align: center;">Nenhum usuário encontrado.</td></tr>';
+      } else {
+        tbody.innerHTML = data.users.map(u => `
+          <tr style="border-bottom: 1px solid var(--border-glass);">
+            <td style="padding: 12px; font-size: 0.85rem;">${u.id}</td>
+            <td style="padding: 12px;"><strong>${u.email}</strong></td>
+            <td style="padding: 12px;">${u.phone || '-'}</td>
+            <td style="padding: 12px;"><span style="padding: 4px 8px; border-radius: 4px; background: ${u.role === 'admin' ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)'}; color: ${u.role === 'admin' ? '#000' : 'inherit'}; font-size: 0.8rem; font-weight: bold;">${u.role || 'user'}</span></td>
+            <td style="padding: 12px;">${u.group_id || '-'}</td>
+            <td style="padding: 12px; font-size: 0.85rem;">${new Date(u.created_at).toLocaleDateString()}</td>
+          </tr>
+        `).join('');
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    if(errorMsg) {
+      errorMsg.textContent = 'Acesso Negado: ' + err.message;
+      errorMsg.style.display = 'block';
+    }
+  } finally {
+    if(loading) loading.style.display = 'none';
   }
 };

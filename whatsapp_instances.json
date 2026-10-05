@@ -6,6 +6,16 @@
     "authFolder": "auth_info_baileys",
     "isDefault": true,
     "disabled": false,
-    "createdAt": "2026-08-21T18:11:38.645Z"
+    "createdAt": "2026-10-05T09:41:51.488Z"
+  },
+  {
+    "id": "inst_1791193534334",
+    "name": "teste",
+    "color": "#3b82f6",
+    "owner_email": "wyllkens@yahoo.com.br",
+    "authFolder": "inst_inst_1791193534334",
+    "isDefault": false,
+    "disabled": false,
+    "createdAt": "2026-10-05T09:45:34.334Z"
   }
 ]
