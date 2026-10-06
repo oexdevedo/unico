@@ -95,10 +95,9 @@ const SupabaseModule = (() => {
         };
       });
 
-      selectedContactIds.clear();
-      allContacts.forEach(c => {
-        if (c.hasValidPhone) selectedContactIds.add(c.id);
-      });
+      // Mantém apenas seleções de contatos que ainda existem
+      const existingIds = new Set(allContacts.map(c => String(c.id)));
+      [...selectedContactIds].forEach(id => { if (!existingIds.has(id)) selectedContactIds.delete(id); });
 
       return allContacts;
     } catch (err) {
@@ -241,13 +240,22 @@ const SupabaseModule = (() => {
       }
 
       let insertedCount = 0;
-      if (uniqueToInsert.length > 0) {
-        const { data, error } = await supabaseClient
-          .from('crm_contacts')
-          .insert(uniqueToInsert);
-
-        if (error) throw error;
-        insertedCount = uniqueToInsert.length;
+      // Envia via API do servidor (que define owner_email/group_id do usuário logado)
+      const BATCH_SIZE = 500;
+      for (let i = 0; i < uniqueToInsert.length; i += BATCH_SIZE) {
+        const batch = uniqueToInsert.slice(i, i + BATCH_SIZE);
+        const res = await fetch('/api/contacts/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ contacts: batch })
+        });
+        let result = {};
+        try { result = await res.json(); } catch { /* resposta não-JSON */ }
+        if (!res.ok || !result.success) {
+          throw new Error(result.error || `Falha ao importar (HTTP ${res.status})`);
+        }
+        insertedCount += batch.length;
       }
 
       await fetchContacts();
@@ -298,15 +306,20 @@ const SupabaseModule = (() => {
     });
   }
 
-  // Selection management
+  // Selection management (IDs sempre normalizados como string)
+  const sid = (id) => String(id);
   function getSelectedIds() { return selectedContactIds; }
-  function getSelectedContacts() { return allContacts.filter(c => selectedContactIds.has(c.id) && c.hasValidPhone); }
-  function toggleSelection(id) { selectedContactIds.has(id) ? selectedContactIds.delete(id) : selectedContactIds.add(id); }
-  function selectAll(list) { (list || allContacts).forEach(c => { if (c.hasValidPhone) selectedContactIds.add(c.id); }); }
+  // Apenas selecionados com WhatsApp válido (usado pelo disparador)
+  function getSelectedContacts() { return allContacts.filter(c => selectedContactIds.has(sid(c.id)) && c.hasValidPhone); }
+  // Todos os selecionados (usado em ações em massa: lista/excluir)
+  function getSelectedAll() { return allContacts.filter(c => selectedContactIds.has(sid(c.id))); }
+  function toggleSelection(id) { const k = sid(id); selectedContactIds.has(k) ? selectedContactIds.delete(k) : selectedContactIds.add(k); }
+  function selectAll(list) { (list || allContacts).forEach(c => selectedContactIds.add(sid(c.id))); }
   function deselectAll() { selectedContactIds.clear(); }
   function invertSelection(list) {
     (list || allContacts).forEach(c => {
-      if (c.hasValidPhone) { selectedContactIds.has(c.id) ? selectedContactIds.delete(c.id) : selectedContactIds.add(c.id); }
+      const k = sid(c.id);
+      selectedContactIds.has(k) ? selectedContactIds.delete(k) : selectedContactIds.add(k);
     });
   }
 
@@ -466,7 +479,7 @@ const SupabaseModule = (() => {
       await supabaseClient.from('profiles').delete().eq('id', contactId);
 
       allContacts = allContacts.filter(c => String(c.id) !== String(contactId));
-      selectedContactIds.delete(contactId);
+      selectedContactIds.delete(String(contactId));
 
       return true;
     } catch (err) {
@@ -475,19 +488,46 @@ const SupabaseModule = (() => {
     }
   }
 
+  // Exclusão em massa via API do servidor (uma única requisição por lote)
+  async function deleteContacts(ids) {
+    const list = (ids || []).map(String);
+    if (!list.length) return { success: true, deleted: 0 };
+    const BATCH_SIZE = 200;
+    let deleted = 0;
+    for (let i = 0; i < list.length; i += BATCH_SIZE) {
+      const batch = list.slice(i, i + BATCH_SIZE);
+      const res = await fetch('/api/contacts', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ ids: batch })
+      });
+      let result = {};
+      try { result = await res.json(); } catch { /* resposta não-JSON */ }
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || `Falha ao excluir (HTTP ${res.status})`);
+      }
+      deleted += batch.length;
+      const removed = new Set(batch);
+      allContacts = allContacts.filter(c => !removed.has(String(c.id)));
+      batch.forEach(id => selectedContactIds.delete(id));
+    }
+    return { success: true, deleted };
+  }
+
   return {
     init, getClient, formatPhone, formatDisplayPhone, isValidWhatsApp,
     fetchContacts, updateContactStatus, updateContactTags, updateContactAiMode, importContacts,
-    createContact, updateContact, deleteContact, findDuplicateContact,
+    createContact, updateContact, deleteContact, deleteContacts, findDuplicateContact,
     filterContacts,
-    isContactSelected: (id) => selectedContactIds.has(id),
+    isContactSelected: (id) => selectedContactIds.has(String(id)),
     toggleSelectContact: (id, force) => {
-      if (force === true) selectedContactIds.add(id);
-      else if (force === false) selectedContactIds.delete(id);
+      if (force === true) selectedContactIds.add(String(id));
+      else if (force === false) selectedContactIds.delete(String(id));
       else toggleSelection(id);
     },
     selectAllValid: () => selectAll(),
-    getSelectedIds, getSelectedContacts, toggleSelection,
+    getSelectedIds, getSelectedContacts, getSelectedAll, toggleSelection,
     selectAll, deselectAll, invertSelection,
     getAllContacts, getUniqueRegions, getUniqueProfessions, getUniqueTags,
     DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY

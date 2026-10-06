@@ -1,28 +1,10 @@
 [
   {
-    "id": "list_1786464027897",
-    "name": "quentes",
-    "description": "quentes",
-    "color": "#ef4444",
-    "contacts": [
-      {
-        "phone": "(61) 98162-6353",
-        "name": "Talita Dias"
-      }
-    ],
-    "createdAt": "2026-08-11T16:00:27.897Z"
-  },
-  {
     "id": "list_1786478236148",
     "name": "Frios",
     "description": "",
     "color": "#3b82f6",
-    "contacts": [
-      {
-        "phone": "(61) 99877-7769",
-        "name": "Bárbara pacheco"
-      }
-    ],
+    "contacts": [],
     "createdAt": "2026-08-11T19:57:16.148Z"
   },
   {

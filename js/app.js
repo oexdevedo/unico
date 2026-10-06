@@ -200,7 +200,7 @@ const App = (() => {
   function setupContactsTab() {
     document.getElementById('btnRefreshContacts')?.addEventListener('click', loadContacts);
     document.getElementById('btnSelectAllContacts')?.addEventListener('click', () => {
-      SupabaseModule.selectAll();
+      SupabaseModule.selectAll(getFilteredContacts());
       renderContactsTable();
     });
     document.getElementById('btnDeselectAll')?.addEventListener('click', () => {
@@ -208,7 +208,7 @@ const App = (() => {
       renderContactsTable();
     });
     document.getElementById('btnInvertSelection')?.addEventListener('click', () => {
-      SupabaseModule.invertSelection();
+      SupabaseModule.invertSelection(getFilteredContacts());
       renderContactsTable();
     });
 
@@ -228,20 +228,60 @@ const App = (() => {
     document.getElementById('importContactsInput')?.addEventListener('change', handleImportContacts);
   }
 
+  function normalizeHeader(key) {
+    return String(key || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+  }
+
+  function mapImportedRow(r) {
+    const out = { name: '', phone: '', email: '', region: '', profession: '' };
+    const keys = Object.keys(r);
+    for (const key of keys) {
+      const k = normalizeHeader(key);
+      const val = String(r[key] ?? '').trim();
+      if (!val) continue;
+      if (!out.name && /^(nome|name|nomecompleto|fullname|contato|cliente|lead)/.test(k)) out.name = val;
+      else if (!out.phone && /^(telefone|whatsapp|whats|zap|celular|cel|phone|tel|fone|numero|mobile)/.test(k)) out.phone = val;
+      else if (!out.email && /^(email|mail)/.test(k)) out.email = val;
+      else if (!out.region && /^(regiao|estado|uf|cidade|city|state|local)/.test(k)) out.region = val;
+      else if (!out.profession && /^(profissao|cargo|funcao|ocupacao|empresa)/.test(k)) out.profession = val;
+    }
+    // Fallback: primeira coluna com 8–15 dígitos vira telefone
+    if (!out.phone) {
+      for (const key of keys) {
+        const digits = String(r[key] ?? '').replace(/\D/g, '');
+        if (digits.length >= 8 && digits.length <= 15) { out.phone = digits; break; }
+      }
+    }
+    if (!out.name && keys.length) {
+      const first = String(r[keys[0]] ?? '').trim();
+      if (first && first.replace(/\D/g, '') !== out.phone.replace(/\D/g, '')) out.name = first;
+    }
+    return out;
+  }
+
   async function handleImportContacts(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (typeof window.XLSX === 'undefined') {
+      showToast('Biblioteca de planilhas (XLSX) não carregou. Verifique a internet e recarregue a página.', 'error');
+      e.target.value = '';
+      return;
+    }
+
     showToast('Lendo planilha...', 'info');
 
+    const isCsv = /\.(csv|txt)$/i.test(file.name);
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {
         const data = evt.target.result;
-        const workbook = window.XLSX.read(data, { type: 'binary' });
+        const workbook = isCsv
+          ? window.XLSX.read(data, { type: 'string' })
+          : window.XLSX.read(new Uint8Array(data), { type: 'array' });
         let rows = [];
         workbook.SheetNames.forEach(sheetName => {
-          const sheetRows = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+          const sheetRows = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '', raw: false });
           if (sheetRows && sheetRows.length > 0) {
             rows = rows.concat(sheetRows);
           }
@@ -252,20 +292,16 @@ const App = (() => {
 
         // Parse rows to profiles
         const mappedContacts = rows.map(r => {
-          const name = r.Nome || r.nome || r.Name || r.name || 'Sem Nome';
-          const phone = r.Telefone || r.telefone || r.WhatsApp || r.whatsapp || r.Phone || r.phone || '';
-          const email = r.Email || r.email || '';
-          const region = r.Regiao || r.regiao || r.Estado || r.estado || r.Cidade || r.cidade || '';
-          const profession = r.Profissao || r.profissao || r.Cargo || r.cargo || '';
-          
+          const m = mapImportedRow(r);
+          const name = m.name || 'Sem Nome';
           return {
             name,
             full_name: name,
-            whatsapp: phone,
-            phone: phone,
-            email,
-            region,
-            profession
+            whatsapp: m.phone,
+            phone: m.phone,
+            email: m.email,
+            region: m.region,
+            profession: m.profession
           };
         }).filter(c => c.whatsapp || c.email); // Only import if has some contact info
 
@@ -293,7 +329,8 @@ const App = (() => {
       }
     };
     reader.onerror = () => showToast('Erro ao ler arquivo', 'error');
-    reader.readAsBinaryString(file);
+    if (isCsv) reader.readAsText(file, 'utf-8');
+    else reader.readAsArrayBuffer(file);
   }
 
   function getFilteredContacts() {
@@ -327,14 +364,14 @@ const App = (() => {
 
     if (filtered.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" class="crx-td-empty">Nenhum contato encontrado.</td></tr>';
-      updateContactsCount(0, 0);
+      updateContactsCount(0, SupabaseModule.getSelectedAll().length);
       return;
     }
 
     const allLists = (typeof window.getAllListsCache === 'function') ? window.getAllListsCache() : [];
 
     tbody.innerHTML = filtered.slice(0, 200).map(c => {
-      const isSelected = selectedIds.has(c.id);
+      const isSelected = selectedIds.has(String(c.id));
       
       const rawStatus = c.status || 'Vermelho';
       const curStatus = ['Vermelho', 'Amarelo', 'Verde'].includes(rawStatus) ? rawStatus : 'Vermelho';
@@ -542,25 +579,25 @@ const App = (() => {
     };
 
     window.confirmDeleteSelectedContacts = async function() {
-      const selected = SupabaseModule.getSelectedContacts();
-      const selectedIds = Array.from(SupabaseModule.getSelectedIds());
+      const selectedIds = SupabaseModule.getSelectedAll().map(c => String(c.id));
       if (selectedIds.length === 0) return showToast('Nenhum contato selecionado.', 'warning');
 
-      if (!confirm(`Tem certeza que deseja excluir os ${selectedIds.length} contatos selecionados?`)) return;
+      const n = selectedIds.length;
+      if (!confirm(`Tem certeza que deseja excluir ${n} contato${n !== 1 ? 's' : ''}? Esta ação não pode ser desfeita.`)) return;
 
       try {
-        for (const id of selectedIds) {
-          await SupabaseModule.deleteContact(id);
-        }
+        showToast(`Excluindo ${n} contato(s)...`, 'info');
+        const res = await SupabaseModule.deleteContacts(selectedIds);
         renderContactsTable();
-        showToast(`🗑️ ${selectedIds.length} contato(s) excluídos com sucesso.`, 'info');
+        showToast(`🗑️ ${res.deleted} contato(s) excluído(s) com sucesso.`, 'success');
       } catch (err) {
         showToast('Erro ao excluir contatos: ' + err.message, 'error');
+        renderContactsTable();
       }
     };
 
     window.renderContactsTable = renderContactsTable;
-    updateContactsCount(filtered.length, SupabaseModule.getSelectedContacts().length);
+    updateContactsCount(filtered.length, SupabaseModule.getSelectedAll().length);
   }
 
   function toggleContact(id) {
@@ -570,7 +607,7 @@ const App = (() => {
 
   function updateContactsCount(total, selected) {
     const label = document.getElementById('contactsCountLabel');
-    if (label) label.textContent = `${total} contatos • ${selected} selecionados com WhatsApp`;
+    if (label) label.textContent = `${total} contatos • ${selected} selecionados`;
 
     const badge = document.getElementById('badgeContactsCount');
     if (badge) badge.textContent = SupabaseModule.getAllContacts().length;

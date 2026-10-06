@@ -389,12 +389,23 @@ const server = http.createServer(async (req, res) => {
       const idx = listsDB.findIndex(l => l.id === listId);
       if (idx === -1) return jsonError(res, 'Lista não encontrada', 404);
       const payload = await parseBody(req);
-      const toAdd = payload.contacts || [];
-      // Avoid duplicates
-      const existing = new Set(listsDB[idx].contacts.map(c => c.phone || c.id));
-      toAdd.forEach(c => { if (!existing.has(c.phone || c.id)) listsDB[idx].contacts.push(c); });
+      const toAdd = Array.isArray(payload.contacts) ? payload.contacts : [];
+      // Avoid duplicates (compara pelos últimos 8 dígitos do telefone)
+      const keyOf = (c) => {
+        const digits = String(c.phone || '').replace(/\D/g, '');
+        return digits.length >= 8 ? digits.slice(-8) : (c.phone || c.id);
+      };
+      const existing = new Set(listsDB[idx].contacts.map(keyOf));
+      let added = 0;
+      toAdd.forEach(c => {
+        const k = keyOf(c);
+        if (!k || existing.has(k)) return;
+        existing.add(k);
+        listsDB[idx].contacts.push(c);
+        added++;
+      });
       saveLists();
-      return json(res, { success: true, total: listsDB[idx].contacts.length });
+      return json(res, { success: true, added, total: listsDB[idx].contacts.length });
     }
 
     if (pathname.startsWith('/api/lists/') && pathname.endsWith('/contacts') && req.method === 'DELETE') {
@@ -660,7 +671,20 @@ const server = http.createServer(async (req, res) => {
         const ids = payload.ids || [];
         if (!ids.length) return jsonError(res, 'Nenhum ID fornecido');
 
-        const { data, error } = await supabase.from('crm_contacts').delete().in('id', ids);
+        const cookies = parseCookies(req);
+        const emailEncoded = cookies['auth-token'];
+        if (!emailEncoded) return jsonError(res, 'Não autorizado', 401);
+        const currentUserEmail = Buffer.from(emailEncoded, 'base64').toString('utf8');
+        const { data: currentUser } = await supabase.from('app_users').select('*').eq('email', currentUserEmail).single();
+        if (!currentUser) return jsonError(res, 'Usuário não encontrado', 401);
+
+        let query = supabase.from('crm_contacts').delete().in('id', ids);
+        if (currentUser.role !== 'admin') {
+          query = currentUser.group_id
+            ? query.or(`owner_email.eq.${currentUserEmail},group_id.eq.${currentUser.group_id}`)
+            : query.eq('owner_email', currentUserEmail);
+        }
+        const { error } = await query;
         if (error) throw error;
         
         return json(res, { success: true, deleted: ids.length });
@@ -958,11 +982,11 @@ const server = http.createServer(async (req, res) => {
               const num = (m.remoteJid || '').split('@')[0];
               const contact = contactsMap.get(num);
               
-              if (!contact) return true; // Contato novo (não está na agenda de ninguém), mostra para todos (ou equipe de triagem)
+              if (!contact) return false; // Contato novo (não está na agenda de ninguém), apenas admin ou dono da instância vê
               
               if (contact.owner_email === currentUserEmail) return true;
               if (groupId && contact.group_id === groupId) return true;
-              if (!contact.owner_email && !contact.group_id) return true; // Contato sem dono
+              if (!contact.owner_email && !contact.group_id) return false; // Contato sem dono, apenas admin ou dono da instância vê
               
               return false; // Pertence a outro usuário/grupo
             });

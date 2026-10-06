@@ -115,6 +115,7 @@ window.ListsModule = (() => {
         </div>
         <div class="folder-info-bar__right">
           <span class="folder-info-bar__badge">${list.contacts.length} contato${list.contacts.length !== 1 ? 's' : ''}</span>
+          <button class="crx-btn crx-btn-ghost crx-btn--sm" id="btnImportToList_${list.id}" onclick="openImportSpreadsheetToList('${list.id}', '${safeName}')" title="Importar contatos de planilha CSV/Excel para esta lista"><i class="ti ti-file-spreadsheet"></i> Importar planilha</button>
           <button class="crx-btn crx-btn-ghost crx-btn--sm" onclick="openAddToList('${list.id}', '${safeName}')"><i class="ti ti-user-plus"></i> Adicionar</button>
           <button class="crx-btn crx-btn-primary crx-btn--sm" onclick="dispatchToList('${list.id}', '${safeName}')"><i class="ti ti-send"></i> Disparar</button>
           <button class="crx-icon-btn" onclick="editList('${list.id}')" title="Editar lista"><i class="ti ti-pencil"></i></button>
@@ -127,7 +128,10 @@ window.ListsModule = (() => {
         ? `<div class="folder-content__empty" style="min-height:200px;">
              <i class="ti ti-address-book-off" style="font-size:2rem; opacity:0.3;"></i>
              <p style="margin:8px 0 12px;">Nenhum contato nesta lista.</p>
-             <button class="crx-btn crx-btn-outline crx-btn--sm" onclick="openAddToList('${list.id}', '${safeName}')"><i class="ti ti-user-plus"></i> Adicionar contatos</button>
+             <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+               <button class="crx-btn crx-btn-primary crx-btn--sm" onclick="openImportSpreadsheetToList('${list.id}', '${safeName}')"><i class="ti ti-file-spreadsheet"></i> Importar planilha (CSV/Excel)</button>
+               <button class="crx-btn crx-btn-outline crx-btn--sm" onclick="openAddToList('${list.id}', '${safeName}')"><i class="ti ti-user-plus"></i> Adicionar contatos</button>
+             </div>
            </div>`
         : `<div class="folder-contacts-grid">
              ${list.contacts.map(c => `
@@ -294,6 +298,161 @@ window.ListsModule = (() => {
     renderListsBoard();
   };
 
+  // ---- Import Spreadsheet (CSV/Excel) directly into a List ----
+  const _notify = (msg, type = 'info') => {
+    if (typeof showToast === 'function') showToast(msg, type);
+    else alert(msg);
+  };
+
+  function normalizeHeader(key) {
+    return String(key || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+  }
+
+  function mapSpreadsheetRow(r) {
+    const out = { name: '', phone: '', email: '', region: '', profession: '' };
+    const keys = Object.keys(r);
+    for (const key of keys) {
+      const k = normalizeHeader(key);
+      const val = String(r[key] ?? '').trim();
+      if (!val) continue;
+      if (!out.name && /^(nome|name|nomecompleto|fullname|contato|cliente|lead)/.test(k)) out.name = val;
+      else if (!out.phone && /^(telefone|whatsapp|whats|zap|celular|cel|phone|tel|fone|numero|mobile)/.test(k)) out.phone = val;
+      else if (!out.email && /^(email|mail)/.test(k)) out.email = val;
+      else if (!out.region && /^(regiao|estado|uf|cidade|city|state|local)/.test(k)) out.region = val;
+      else if (!out.profession && /^(profissao|cargo|funcao|ocupacao|empresa)/.test(k)) out.profession = val;
+    }
+    // Fallback: primeira coluna com 8–15 dígitos vira telefone
+    if (!out.phone) {
+      for (const key of keys) {
+        const digits = String(r[key] ?? '').replace(/\D/g, '');
+        if (digits.length >= 8 && digits.length <= 15) { out.phone = digits; break; }
+      }
+    }
+    if (!out.name && keys.length) {
+      const first = String(r[keys[0]] ?? '').trim();
+      if (first && first.replace(/\D/g, '') !== out.phone.replace(/\D/g, '')) out.name = first;
+    }
+    // Normaliza telefone: só dígitos, adiciona DDI 55 para números BR (10/11 dígitos)
+    let digits = out.phone.replace(/\D/g, '');
+    if (digits.length === 10 || digits.length === 11) digits = '55' + digits;
+    out.phone = digits;
+    return out;
+  }
+
+  function readSpreadsheet(file) {
+    return new Promise((resolve, reject) => {
+      if (typeof window.XLSX === 'undefined') {
+        reject(new Error('Biblioteca de planilhas (XLSX) não carregou. Verifique a internet e recarregue a página.'));
+        return;
+      }
+      const isCsv = /\.(csv|txt)$/i.test(file.name);
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const wb = isCsv
+            ? window.XLSX.read(evt.target.result, { type: 'string' })
+            : window.XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+          let rows = [];
+          wb.SheetNames.forEach(name => {
+            const sheetRows = window.XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '', raw: false });
+            if (sheetRows && sheetRows.length) rows = rows.concat(sheetRows);
+          });
+          resolve(rows);
+        } catch (err) { reject(err); }
+      };
+      reader.onerror = () => reject(new Error('Erro ao ler o arquivo.'));
+      if (isCsv) reader.readAsText(file, 'utf-8');
+      else reader.readAsArrayBuffer(file);
+    });
+  }
+
+  window.openImportSpreadsheetToList = function(listId, listName) {
+    let input = document.getElementById('importToListFileInput');
+    if (!input) {
+      input = document.createElement('input');
+      input.type = 'file';
+      input.id = 'importToListFileInput';
+      input.accept = '.csv,.txt,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+    }
+    input.value = '';
+    input.onchange = (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) importSpreadsheetToList(file, listId, listName);
+    };
+    input.click();
+  };
+
+  async function importSpreadsheetToList(file, listId, listName) {
+    const btn = document.getElementById(`btnImportToList_${listId}`);
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Importando...'; }
+
+    try {
+      _notify('Lendo planilha...', 'info');
+      const rows = await readSpreadsheet(file);
+      if (!rows.length) throw new Error('Planilha vazia ou em formato inválido.');
+
+      // Mapeia e remove duplicados dentro da própria planilha
+      const seen = new Set();
+      const mapped = [];
+      let invalid = 0;
+      rows.forEach(r => {
+        const m = mapSpreadsheetRow(r);
+        if (!m.phone || m.phone.length < 10) { invalid++; return; }
+        const key = m.phone.slice(-8);
+        if (seen.has(key)) return;
+        seen.add(key);
+        mapped.push(m);
+      });
+
+      if (!mapped.length) {
+        throw new Error('Nenhum telefone válido encontrado. Verifique se a planilha tem uma coluna "Telefone", "Celular" ou "WhatsApp".');
+      }
+
+      // 1) Adiciona à lista
+      const listContacts = mapped.map(m => ({ phone: m.phone, name: m.name || 'Sem Nome' }));
+      const res = await fetch(`/api/lists/${listId}/contacts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contacts: listContacts })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.success === false) throw new Error(data.error || `Falha ao salvar na lista (HTTP ${res.status})`);
+
+      // 2) Salva também na agenda os contatos que ainda não existem (não bloqueia a lista se falhar)
+      let agendaMsg = '';
+      if (typeof SupabaseModule !== 'undefined' && typeof SupabaseModule.importContacts === 'function') {
+        try {
+          const agendaRes = await SupabaseModule.importContacts(mapped.map(m => ({
+            name: m.name || 'Sem Nome', full_name: m.name || 'Sem Nome',
+            phone: m.phone, whatsapp: m.phone,
+            email: m.email, region: m.region, profession: m.profession
+          })));
+          if (agendaRes && agendaRes.count > 0) agendaMsg = ` ${agendaRes.count} novo(s) também salvos na agenda.`;
+          if (typeof window.renderContactsTable === 'function') window.renderContactsTable();
+        } catch (agendaErr) {
+          console.warn('Contatos adicionados à lista, mas falha ao salvar na agenda:', agendaErr);
+          agendaMsg = ' (não foi possível salvar na agenda)';
+        }
+      }
+
+      const invalidMsg = invalid > 0 ? ` ${invalid} linha(s) sem telefone válido ignorada(s).` : '';
+      _notify(`✅ ${mapped.length} contato(s) importados para "${listName}". Total na lista: ${data.total ?? '—'}.${agendaMsg}${invalidMsg}`, 'success');
+
+      // Atualiza UI
+      _activeListId = listId;
+      if (typeof fetchListsCache === 'function') await fetchListsCache();
+      if (typeof populateDispatcherListSource === 'function') populateDispatcherListSource();
+      renderListsBoard();
+    } catch (err) {
+      console.error('Erro ao importar planilha para lista:', err);
+      _notify(`Erro na importação: ${err.message}`, 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+    }
+  }
+
   // ---- Dispatch to List ----
   window.dispatchToList = function(listId, listName) {
     // Switch to dispatcher tab
@@ -376,22 +535,27 @@ function filterListDropdown(query) {
 async function addSelectedContactsToList(listId, listName) {
   // Get selected contacts from SupabaseModule
   let selectedContacts = [];
-  if (typeof SupabaseModule !== 'undefined' && typeof SupabaseModule.getSelectedContacts === 'function') {
-    selectedContacts = SupabaseModule.getSelectedContacts();
+  if (typeof SupabaseModule !== 'undefined') {
+    selectedContacts = typeof SupabaseModule.getSelectedAll === 'function'
+      ? SupabaseModule.getSelectedAll()
+      : SupabaseModule.getSelectedContacts();
   }
 
   if (!selectedContacts.length) {
-    alert('Nenhum contato selecionado.');
+    if (typeof showToast === 'function') showToast('Nenhum contato selecionado.', 'warning');
+    else alert('Nenhum contato selecionado.');
     return;
   }
 
   const contacts = selectedContacts.map(c => ({
     phone: c.telefone || c.phone || '',
-    name: c.nome || c.name || ''
+    name: c.nome || c.displayName || c.name || ''
   })).filter(c => c.phone);
+  const skipped = selectedContacts.length - contacts.length;
 
   if (!contacts.length) {
-    alert('Nenhum contato com telefone válido na seleção.');
+    if (typeof showToast === 'function') showToast('Nenhum contato com telefone na seleção.', 'warning');
+    else alert('Nenhum contato com telefone na seleção.');
     return;
   }
 
@@ -401,6 +565,7 @@ async function addSelectedContactsToList(listId, listName) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contacts })
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
     // Close dropdown
@@ -413,15 +578,20 @@ async function addSelectedContactsToList(listId, listName) {
     // Update dispatcher source
     populateDispatcherListSource();
 
+    // Atualiza a coluna "Lista / Tag" da tabela
+    if (typeof window.renderContactsTable === 'function') window.renderContactsTable();
+
     // Show feedback
+    const extra = skipped > 0 ? ` (${skipped} sem telefone ignorado${skipped !== 1 ? 's' : ''})` : '';
     if (typeof showToast === 'function') {
-      showToast(`✅ ${contacts.length} contato(s) adicionados à lista "${listName}"!`, 'success');
+      showToast(`✅ ${contacts.length} contato(s) adicionados à lista "${listName}"!${extra}`, 'success');
     } else {
-      alert(`✅ ${contacts.length} contato(s) adicionados à lista "${listName}"! Total: ${data.total}`);
+      alert(`✅ ${contacts.length} contato(s) adicionados à lista "${listName}"! Total: ${data.total}${extra}`);
     }
   } catch (err) {
     console.error('Erro ao adicionar à lista:', err);
-    alert('Erro ao adicionar contatos à lista.');
+    if (typeof showToast === 'function') showToast('Erro ao adicionar contatos à lista.', 'error');
+    else alert('Erro ao adicionar contatos à lista.');
   }
 }
 
