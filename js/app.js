@@ -362,15 +362,12 @@ const App = (() => {
     setStatText('statGreenContacts', allContacts.filter(c => c.status === 'Verde').length);
     setStatText('statSelectedContacts', selectedIds.size);
 
-    if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="crx-td-empty">Nenhum contato encontrado.</td></tr>';
-      updateContactsCount(0, SupabaseModule.getSelectedAll().length);
-      return;
-    }
-
     const allLists = (typeof window.getAllListsCache === 'function') ? window.getAllListsCache() : [];
 
-    tbody.innerHTML = filtered.slice(0, 200).map(c => {
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="crx-td-empty">Nenhum contato encontrado.</td></tr>';
+    } else {
+      tbody.innerHTML = filtered.slice(0, 200).map(c => {
       const isSelected = selectedIds.has(String(c.id));
       
       const rawStatus = c.status || 'Vermelho';
@@ -439,7 +436,8 @@ const App = (() => {
           </td>
         </tr>
       `;
-    }).join('');
+      }).join('');
+    }
 
     window.handleContactStatusChange = async function(selectEl, contactId, phone) {
       const newStatus = selectEl.value;
